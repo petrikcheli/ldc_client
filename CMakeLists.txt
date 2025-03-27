@@ -28,13 +28,19 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
-        p2p.h p2p.cpp
+        #p2p.h p2p.cpp
+
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(boost_libdatachannel
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        websocket_client.h websocket_client.cpp
+        p2p_connection.h p2p_connection.cpp
+        screen_streamer.h screen_streamer.cpp
+        call_dialog.h call_dialog.cpp call_dialog.ui
+
     )
 else()
     if(ANDROID)

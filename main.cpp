@@ -159,6 +159,7 @@ int main() {
     return 0;
 }
 */
+
 #include "mainwindow.h"
 //#include "p2p.h"
 
@@ -169,10 +170,10 @@ int main(int argc, char *argv[])
     io_context ioc;
     ip::tcp::resolver resolver(ioc);
     QApplication a(argc, argv);
-    MainWindow w;
-    w.connection_to_the_server(ioc, resolver);
-    std::thread reader([&w](){w.p2p_worker->receive_loop_from_server();});
+    MainWindow w(ioc, resolver);
+    std::thread io_thread([&ioc]() { ioc.run(); });
     w.show();
-    reader.detach();
+    io_thread.detach();
+    //reader.detach();
     return a.exec();
 }

@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "p2p.h"
+//#include "p2p.h"
 
 #include <QMainWindow>
 #include <QApplication>
@@ -10,6 +10,29 @@
 #include <QLabel>
 #include <QTimer>
 #include <QBuffer>
+
+#include <iostream>
+#include <string>
+#include <thread>
+//#include <memory>
+
+#include <boost/asio.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
+
+#include <nlohmann/json.hpp>
+//#include <rtc/rtc.hpp
+
+#include "p2p_connection.h"
+#include "websocket_client.h"
+#include "screen_streamer.h"
+#include "call_dialog.h"
+
+using namespace boost::asio;
+using namespace boost::beast;
+using namespace std;
+using json = nlohmann::json;
+namespace websocket = boost::beast::websocket;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -22,12 +45,44 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(io_context &ioc, ip::tcp::resolver &resolver, QWidget *parent = nullptr);
     ~MainWindow();
-    void connection_to_the_server(io_context &ioc, ip::tcp::resolver &resolver);
-    std::shared_ptr<p2p> p2p_worker;
-    void update_screen(const QByteArray &image_data);
 
+    //void connection_to_the_server(io_context &ioc, ip::tcp::resolver &resolver);
+    //std::shared_ptr<p2p> p2p_worker;
+    //void update_screen(const QByteArray &image_data);
+
+private slots:
+    void on_pb_reg_clicked();
+    void on_pd_offer_clicked();
+    void on_pb_share_clicked();
+    void on_showCallOffer(const QString msg);
+
+    void on_pb_showCallOffer_clicked();
+
+signals:
+    void show_call_offer(const QString msg); // Сигнал для показа окна
+    void send_candidate_signal(const QString msg);
+private:
+
+    void handle_message(const nlohmann::json &msg);
+
+private:
+    Ui::MainWindow *ui;
+
+    std::shared_ptr<WebSocketClient> ws_client_;
+    std::shared_ptr<P2PConnection> p2p_worker_;
+    std::shared_ptr<ScreenStreamer> screen_streamer_;
+
+    call_dialog *call_offer;
+    std::shared_ptr<std::thread> thread_call_offer;
+
+    std::string self_id;
+    std::string peer_id;
+};
+#endif // MAINWINDOW_H
+
+/*
 public slots:
     void captureScreen() {
         QScreen *screen = QApplication::primaryScreen();
@@ -50,14 +105,4 @@ public slots:
         p2p_worker->send_data_p2p(byteArray); // Отправляем данные
         //socket->flush();
     }
-
-private slots:
-    void on_pb_reg_clicked();
-    void on_pd_offer_clicked();
-    void on_pb_share_clicked();
-
-private:
-    Ui::MainWindow *ui;
-
-};
-#endif // MAINWINDOW_H
+*/
