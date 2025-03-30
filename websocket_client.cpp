@@ -5,6 +5,19 @@
 #define HOST "95.183.12.120"
 #define PORT "9001"
 
+// Инициализация вне класса
+const std::string WebSocketClient::type_str[20] = {
+    "register",
+    "offer",
+    "answer",
+    "candidate",
+    "candidate_answer",
+    "end_call",
+    "end_share",
+    "unknown",
+    "trash"
+};
+
 WebSocketClient::WebSocketClient( io_context &ioc, const std::function<void(const nlohmann::json &)> &func )
 {
     try{
@@ -24,13 +37,6 @@ void WebSocketClient::connect( const std::string &host, const std::string &port 
     ws_->handshake( host, "/" );
 
     qDebug() << "Connected to the Server";
-
-    json register_msg = {
-        {"type", "register"},
-        {"sender", "1"}
-    };
-    send_message( register_msg );
-    qDebug() << "Send to reg server";
 
     receive_loop();
 
@@ -61,9 +67,11 @@ void WebSocketClient::receive_loop()
             }
 
             std::string type = msg["type"];
-            if(type != "end_call"){
-                receive_loop();
-            }
+            //qDebug() << "ws recv type: " << type;
+            receive_loop();
+            // if(type != type_str[END_CALL]){
+
+            // }
         } else {
             qDebug() << "Error in reading: " << ec.what();
             json msg_ec = {

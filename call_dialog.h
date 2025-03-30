@@ -27,18 +27,36 @@ public:
         std::shared_ptr<WebSocketClient> ws_woker,
         std::shared_ptr<ScreenStreamer> screen_streamer,
         QWidget *parent = nullptr);
+
     ~call_dialog();
+
+    //json файлы для p2p соединения
     json msg_candidate;
     json msg_offer;
-    //QLabel* get_screen_label(){return this->ui->label;}
-    //std::string peer_id;
-    //rtc::Description offer;
+    json msg_answer;
+
+    //заканчивает звонок
     void end_call();
 
+    void on_remote_call_ended();
+
+    void hide_ui_end_call();
+
+    //начинает звонок
+    void start_call();
+
 private slots:
+    //еще не реализовал
     void on_pb_reject_clicked();
 
+    //метод который принимает звонок, убирает кнопки, ставит новые
     void on_pb_accept_clicked();
+
+    //включает и выключается трансляцию экрана
+    void onShareClicked();
+
+    //заканчивает звонок звонок
+    void onEndCallClicked();
 
 private:
     Ui::call_dialog *ui;

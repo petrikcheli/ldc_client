@@ -22,6 +22,21 @@ public:
     // Метод для отправки сообщения на сервер
     void send_message( const nlohmann::json& msg );
 
+    enum Etype_message{
+        REGISTER,
+
+        OFFER,
+        ANSWER,
+        CANDIDATE,
+        CANDIDATE_ANSWER,
+        END_CALL,
+        END_SHARE,
+
+        UNKNOWN,
+        TRASH
+    };
+
+    const static std::string type_str[20];
 
 private:
     //socket сервера

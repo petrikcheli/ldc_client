@@ -32,6 +32,8 @@ using namespace boost::asio;
 using namespace boost::beast;
 using namespace std;
 using json = nlohmann::json;
+using ews_type = WebSocketClient::Etype_message;
+
 namespace websocket = boost::beast::websocket;
 
 QT_BEGIN_NAMESPACE
@@ -57,15 +59,19 @@ private slots:
     void on_pd_offer_clicked();
     void on_pb_share_clicked();
     void on_showCallOffer(const QString msg);
-
+    void on_showCallAnswer();
     void on_pb_showCallOffer_clicked();
 
 signals:
     void show_call_offer(const QString msg); // Сигнал для показа окна
+    void show_call_answer();
     void send_candidate_signal(const QString msg);
 private:
 
     void handle_message(const nlohmann::json &msg);
+
+    void set_self_id(const std::string &self_id){this->self_id = self_id;}
+    void set_peer_id(const std::string &peer_id){this->peer_id = peer_id;}
 
 private:
     Ui::MainWindow *ui;

@@ -35,7 +35,7 @@ MainWindow::MainWindow( io_context &ioc, ip::tcp::resolver &resolver, QWidget *p
         ui->label,
         [this](const QByteArray &data) {
             if (p2p_worker_) {
-                p2p_worker_->send_frame_p2p(data);
+                p2p_worker_->send_video_frame_p2p(data);
             }
         },
         this
@@ -58,6 +58,7 @@ MainWindow::MainWindow( io_context &ioc, ip::tcp::resolver &resolver, QWidget *p
     call_offer = new call_dialog(p2p_worker_, ws_client_, screen_streamer_, this);
 
     connect(this, &MainWindow::show_call_offer, this, &MainWindow::on_showCallOffer);
+    connect(this, &MainWindow::show_call_answer, this, &MainWindow::on_showCallAnswer);
 
 }
 
@@ -69,17 +70,23 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pb_reg_clicked()
 {
-    //p2p_worker->set_self_id(ui->self_id->text().toStdString());
-    // //p2p_worker->set_peer_id(ui->peer_id->text().toStdString());
-    // p2p_worker->register_on_server();
+    set_self_id(ui->self_id->text().toStdString());
+
+    json register_msg = {
+        {"type", WebSocketClient::type_str[ews_type::REGISTER]},
+        {"sender", self_id}
+    };
+    ws_client_->send_message( register_msg );
+    qDebug() << "Send to reg server";
 }
 
 void MainWindow::on_pd_offer_clicked()
 {
-    // //p2p_worker->set_self_id(ui->self_id->text().toStdString());
-    // p2p_worker->set_peer_id(ui->peer_id->text().toStdString());
-    // p2p_worker->send_offer();
-    // //p2p_worker->register_on_server();
+    set_peer_id(ui->peer_id->text().toStdString());
+    p2p_worker_->create_offer(self_id, peer_id);
+    emit show_call_answer();
+    call_offer->start_call();
+    //emit show_call_offer(QString::fromStdString(msg.dump()));
 }
 
 void MainWindow::on_pb_share_clicked()
@@ -101,6 +108,11 @@ void MainWindow::on_showCallOffer(const QString msg)
     }
 }
 
+void MainWindow::on_showCallAnswer()
+{
+    call_offer->show();
+}
+
 void MainWindow::handle_message(const nlohmann::json &msg)
 {
     //std::string received = buffers_to_string(buffer.data());
@@ -109,23 +121,29 @@ void MainWindow::handle_message(const nlohmann::json &msg)
     std::string sender = msg["sender"];
     std::string type = msg["type"];
 
-    if( type == "answer" ) {
+    if( type == WebSocketClient::type_str[ews_type::ANSWER]) {
         //peer_connection->setRemoteDescription(rtc::Description(msg["sdp"], "answer"));
+        call_offer->msg_answer = msg;
+        std::string candidate = msg["sdp"];
+        rtc::Description offer(candidate, rtc::Description::Type::Answer);
+        p2p_worker_->setRemoteDescription(offer, msg["type"]);
         qDebug() << "SDP Answer down established";
     }
-    else if( type == "candidate" ) {
-        rtc::Candidate candidate(msg["candidate"], msg["sdpMid"]);
-        call_offer->msg_candidate = msg;
-        //peer_connection->addRemoteCandidate(candidate);
+    else if( type == WebSocketClient::type_str[ews_type::CANDIDATE_ANSWER]){
+        p2p_worker_->addRemoteCandidate(msg["candidate"], msg["sdpMid"]);
         qDebug() << "ice-candidate added";
     }
-    else if( type == "offer" ) {
+    else if( type == WebSocketClient::type_str[ews_type::CANDIDATE] ) {
+        call_offer->msg_candidate = msg;
+        qDebug() << "ice-candidate added";
+    }
+    else if( type == WebSocketClient::type_str[ews_type::OFFER] ) {
         qDebug() << "offer added";
         emit show_call_offer(QString::fromStdString(msg.dump()));
     }
-    else if( type == "end_call"){
+    else if( type == WebSocketClient::type_str[ews_type::END_CALL]){
         qDebug() << "end call";
-        call_offer->end_call();
+        call_offer->on_remote_call_ended();
     }
 }
 

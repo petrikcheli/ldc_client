@@ -18,8 +18,23 @@ ScreenStreamer::ScreenStreamer(QLabel *label, std::function<void( const QByteArr
 
 void ScreenStreamer::start(){
     // Таймер для периодического обновления (например, 30 FPS)
+    flag_is_Shared_ = true;
     connect(timer_, &QTimer::timeout, this, &ScreenStreamer::capture_screen);
+    connect(this, &ScreenStreamer::stop_share_signal, timer_, &QTimer::stop);
     timer_->start(33);  // ~30 FPS (1000ms / 30 ≈ 33ms)
+}
+
+void ScreenStreamer::stop()
+{
+    flag_is_Shared_ = false;
+    disconnect(timer_, &QTimer::timeout, this, &ScreenStreamer::capture_screen);
+    //emit stop_share_signal();
+    timer_->stop();
+}
+
+bool ScreenStreamer::is_shared()
+{
+    return flag_is_Shared_;
 }
 
 void ScreenStreamer::update_frame(const QByteArray &image_data)

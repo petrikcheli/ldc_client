@@ -18,11 +18,20 @@ public:
     // Метод для обновления кадра
     void update_frame(const QByteArray &image_data);
 
-    //потом доделаю нужны для того чтобы включать и выключать транслляцию экрана
+    //включает трансляцию
     void start();
+
+    //выключает трансляцию
     void stop();
 
+    //выводит транслируется ли экран
+    bool is_shared();
+
+    //установка label для трансляции
     void set_label(QLabel *label){this->label_ = label;}
+
+signals:
+    void stop_share_signal();
 
 private:
 
@@ -41,6 +50,9 @@ private:
 
     // тут обрабатываются данные и потом через send_callback_ данные отправляются
     void send_image(const QPixmap &pixmap);
+
+    //flag который говорит о том, запущена ли трансляция экрана
+    bool flag_is_Shared_{false};
 
 };
 #endif // SCREEN_STREAMER_H

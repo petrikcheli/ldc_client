@@ -25,6 +25,10 @@ public:
                               const std::string &type,
                               const std::string &peer_id);
 
+    // устанавливает Answer::adp от собесендника
+    void setRemoteDescription(const std::string &sdp,
+                                             const std::string &type);
+
     // устанавливает candidate от собеседника
     void addRemoteCandidate(const std::string &candidate_msg, const std::string &sdpMid);
 
@@ -50,7 +54,11 @@ public:
     //этот метод пойдет в screen_streamer
     void send_frame_p2p(const QByteArray &data);
 
-    void close_p2p();
+    void send_video_frame_p2p(const QByteArray &data);
+
+    void close_p2p(bool send_end_call);
+
+    void set_peer_id(const std::string &peer_id) {this->peer_id_ = peer_id;}
 
 private:
     //id пользователя
@@ -65,16 +73,21 @@ private:
     //объект rtc::PeerConnection
     std::shared_ptr<rtc::DataChannel> data_channel_;
 
+    //объект rtc::Track
     std::shared_ptr<rtc::Track> track_;
+
+    std::shared_ptr<rtc::Track> video_track_;
 
     //объект который хранит конфиг от stun
     rtc::Configuration config_;
 
     //инициализирует peer_connection_
-    void init();
+    void init(const std::string &candidate_type);
 
     //инициализирует data_channel
     void init_data_channel();
+
+    void init_video_track();
 
 };
 
