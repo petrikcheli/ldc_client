@@ -1,6 +1,7 @@
 {
   "dependencies": [
-    "libdatachannel",
-    "nlohmann-json"
+    "nlohmann-json",
+    "opus",
+    "portaudio"
   ]
 }

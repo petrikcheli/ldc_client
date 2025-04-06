@@ -27,6 +27,8 @@
 #include "websocket_client.h"
 #include "screen_streamer.h"
 #include "call_dialog.h"
+#include "audio/audio.h"
+#include "audio/Audio_parametrs.h"
 
 using namespace boost::asio;
 using namespace boost::beast;
@@ -79,12 +81,19 @@ private:
     std::shared_ptr<WebSocketClient> ws_client_;
     std::shared_ptr<P2PConnection> p2p_worker_;
     std::shared_ptr<ScreenStreamer> screen_streamer_;
+    std::shared_ptr<Audio> audio_worker_;
 
     call_dialog *call_offer;
     std::shared_ptr<std::thread> thread_call_offer;
 
     std::string self_id;
     std::string peer_id;
+
+    bool flag_description_send = false;
+    bool flag_candidate_send = false;
+
+    std::string candidate ;
+    std::string sdpMid;
 };
 #endif // MAINWINDOW_H
 

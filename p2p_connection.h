@@ -14,7 +14,8 @@ class P2PConnection
 public:
     // инициализирует ссылки на функции
     P2PConnection(std::function<void(const nlohmann::json &)> send_p2p_data_on_server,
-                  std::function<void(const QByteArray &)> on_share_data);
+                  std::function<void(const QByteArray &)> on_share_data,
+                  std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame);
 
     // инициализирует peer_connection_ data_channel_ self и peer id
     // и начинает процесс отправки offer
@@ -40,6 +41,10 @@ public:
     //будет использоваться метод из screen_streamer (update_frame())
     std::function<void(const QByteArray &)> on_share_data;
 
+    //ссылка на функцию которая отправляет данные для audio потока
+    //будет использоваться метод из audio (decode_frame)
+    std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame;
+
     //std::function<void(const rtc::Description &)> on_local_description;
 
     //std::function<void(const rtc::Candidate &)> on_ice_candidate;
@@ -56,9 +61,13 @@ public:
 
     void send_video_frame_p2p(const QByteArray &data);
 
+    void send_audio_frame_p2p(std::queue<std::shared_ptr<std::vector<unsigned char>>>& q_voice);
+
     void close_p2p(bool send_end_call);
 
     void set_peer_id(const std::string &peer_id) {this->peer_id_ = peer_id;}
+
+    void set_sdp_video_track(const std::string &sdp){video_track_->setDescription(sdp);}
 
 private:
     //id пользователя
@@ -78,6 +87,8 @@ private:
 
     std::shared_ptr<rtc::Track> video_track_;
 
+    std::shared_ptr<rtc::Track> audio_track_;
+
     //объект который хранит конфиг от stun
     rtc::Configuration config_;
 
@@ -89,6 +100,8 @@ private:
 
     void init_video_track();
 
+    void init_audio_track();
+    std::shared_ptr<std::vector<unsigned char> > sh_ptr_to_vec_UnC_ptr(rtc::message_ptr vec);
 };
 
 #endif // P2P_CONNECTION_H

@@ -11,6 +11,7 @@
 #include "p2p_connection.h"
 #include "websocket_client.h"
 #include "screen_streamer.h"
+#include "audio/audio.h"
 
 namespace Ui {
 class call_dialog;
@@ -26,6 +27,7 @@ public:
         std::shared_ptr<P2PConnection> p2p_worker,
         std::shared_ptr<WebSocketClient> ws_woker,
         std::shared_ptr<ScreenStreamer> screen_streamer,
+        std::shared_ptr<Audio> audio_worker,
         QWidget *parent = nullptr);
 
     ~call_dialog();
@@ -55,6 +57,9 @@ private slots:
     //включает и выключается трансляцию экрана
     void onShareClicked();
 
+    //включает и выключает звук
+    void onShareAudioClicked();
+
     //заканчивает звонок звонок
     void onEndCallClicked();
 
@@ -63,7 +68,7 @@ private:
     std::shared_ptr<P2PConnection> p2p_worker;
     std::shared_ptr<WebSocketClient> ws_woker;
     std::shared_ptr<ScreenStreamer> screen_streamer;
-
+    std::shared_ptr<Audio> audio_worker;
 
 };
 

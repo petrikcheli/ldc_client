@@ -41,6 +41,14 @@ MainWindow::MainWindow( io_context &ioc, ip::tcp::resolver &resolver, QWidget *p
         this
     );
 
+    audio_worker_ = make_shared<Audio>();
+
+    audio_worker_->signalAudioCaptured.connect(
+        [this](std::queue<std::shared_ptr<std::vector<unsigned char>>>& q_voice) {
+            p2p_worker_->send_audio_frame_p2p(q_voice);
+        }
+    );
+
     // Инициализация p2p_worker_
     p2p_worker_ = std::make_shared<P2PConnection>(
         [this](const json &msg) {
@@ -52,10 +60,15 @@ MainWindow::MainWindow( io_context &ioc, ip::tcp::resolver &resolver, QWidget *p
             if (screen_streamer_) {
                 screen_streamer_->update_frame(frame);
             }
+        },
+        [this](std::shared_ptr<std::vector<unsigned char>> frame) {
+            if(audio_worker_) {
+                audio_worker_->decoded_voice(frame);
+            }
         }
     );
 
-    call_offer = new call_dialog(p2p_worker_, ws_client_, screen_streamer_, this);
+    call_offer = new call_dialog(p2p_worker_, ws_client_, screen_streamer_, audio_worker_, this);
 
     connect(this, &MainWindow::show_call_offer, this, &MainWindow::on_showCallOffer);
     connect(this, &MainWindow::show_call_answer, this, &MainWindow::on_showCallAnswer);
@@ -126,12 +139,30 @@ void MainWindow::handle_message(const nlohmann::json &msg)
         call_offer->msg_answer = msg;
         std::string candidate = msg["sdp"];
         rtc::Description offer(candidate, rtc::Description::Type::Answer);
+
         p2p_worker_->setRemoteDescription(offer, msg["type"]);
+        std::cout << "remote sdp: " << candidate << std::endl;
         qDebug() << "SDP Answer down established";
+
+        if(flag_candidate_send == true){
+            p2p_worker_->addRemoteCandidate(this->candidate, sdpMid);
+            //std::cout << "remote sdp: " << msg["candidate"] << std::endl;
+            qDebug() << "ice-candidate added";
+            flag_candidate_send = false;
+        }
+        flag_description_send = true;
     }
     else if( type == WebSocketClient::type_str[ews_type::CANDIDATE_ANSWER]){
+        if(flag_description_send == false){
+            candidate = msg["candidate"];
+            sdpMid = msg["sdpMid"];
+            flag_candidate_send = true;
+            return;
+        }
         p2p_worker_->addRemoteCandidate(msg["candidate"], msg["sdpMid"]);
+        std::cout << "remote sdp: " << msg["candidate"] << std::endl;
         qDebug() << "ice-candidate added";
+        flag_description_send = false;
     }
     else if( type == WebSocketClient::type_str[ews_type::CANDIDATE] ) {
         call_offer->msg_candidate = msg;

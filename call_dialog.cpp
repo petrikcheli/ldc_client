@@ -5,6 +5,7 @@ call_dialog::call_dialog(
     std::shared_ptr<P2PConnection> p2p_worker,
     std::shared_ptr<WebSocketClient> ws_woker,
     std::shared_ptr<ScreenStreamer> screen_streamer,
+    std::shared_ptr<Audio> audio_worker,
     QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::call_dialog)
@@ -18,6 +19,7 @@ call_dialog::call_dialog(
     this->p2p_worker = p2p_worker;
     this->ws_woker = ws_woker;
     this->screen_streamer = screen_streamer;
+    this->audio_worker = audio_worker;
     screen_streamer->set_label(ui->label);
 }
 
@@ -66,6 +68,7 @@ void call_dialog::on_pb_accept_clicked()
     //мне необходимо создать peer_connection
     //отправить данные, чтобы собеседник мог подключитьться
     //мне необходимо открыть трансляцию
+    audio_worker->open_out_stream();
 }
 
 void call_dialog::onShareClicked()
@@ -77,6 +80,13 @@ void call_dialog::onShareClicked()
         qDebug() << "share off";
         screen_streamer->stop();
     }
+}
+
+void call_dialog::onShareAudioClicked()
+{
+    qDebug() << "share audio on";
+    audio_worker->open_in_stream();
+    audio_worker->open_out_stream();
 }
 
 void call_dialog::onEndCallClicked()
@@ -153,14 +163,21 @@ void call_dialog::start_call()
     QPushButton *share = new QPushButton("включить демонстрацию");
     share->setObjectName("share_button");
 
+    QPushButton *audio_share = new QPushButton("включить звук");
+    share->setObjectName("audio_share_button");
+
     QPushButton *endCall = new QPushButton("завершить звонок");
     endCall->setObjectName("endCall_button");
 
+
+
     ui->gridLayout->addWidget(share);
     ui->gridLayout->addWidget(endCall);
+    ui->gridLayout->addWidget(audio_share);
 
     // Соединяем сигналы и слоты
     connect(share, &QPushButton::clicked, this, &call_dialog::onShareClicked);
     connect(endCall, &QPushButton::clicked, this, &call_dialog::onEndCallClicked);
+    connect(audio_share, &QPushButton::clicked, this, &call_dialog::onShareAudioClicked);
 }
 

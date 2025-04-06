@@ -6,14 +6,16 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(Boost_USE_STATIC_LIBS OFF)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(Boost COMPONENTS thread filesystem system program_options REQUIRED)
+find_package(Boost COMPONENTS thread filesystem system program_options date_time REQUIRED)
+find_package(portaudio REQUIRED)
+find_package(Opus CONFIG REQUIRED)
 find_package(LibDataChannel CONFIG REQUIRED)
 
 
@@ -40,7 +42,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         p2p_connection.h p2p_connection.cpp
         screen_streamer.h screen_streamer.cpp
         call_dialog.h call_dialog.cpp call_dialog.ui
-
+        audio/audio.h audio/audio.cpp
+        audio/Audio_parametrs.h
     )
 else()
     if(ANDROID)
@@ -58,10 +61,13 @@ endif()
 target_link_libraries(boost_libdatachannel
     PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
+    portaudio
+    Opus::opus
     Boost::thread
     Boost::filesystem
     Boost::system
     Boost::program_options
+    Boost::date_time
     nlohmann_json::nlohmann_json
     LibDataChannel::LibDataChannel
 )
