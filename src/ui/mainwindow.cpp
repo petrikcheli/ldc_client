@@ -178,6 +178,17 @@ void MainWindow::handle_message(const nlohmann::json &msg)
     }
 }
 
+void MainWindow::handle_p2p_signal(es_p2p signal)
+{
+    switch (signal) {
+    case es_p2p::OPEN_DATACHANNEL:
+        call_offer->on_datachannel_open();
+        break;
+    default:
+        break;
+    }
+}
+
 
 
 /*

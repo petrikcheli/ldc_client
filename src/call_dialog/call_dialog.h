@@ -8,10 +8,11 @@
 #include <string>
 #include <thread>
 
-#include "p2p_connection.h"
-#include "websocket_client.h"
-#include "screen_streamer.h"
-#include "audio/audio.h"
+//#include "../ui/mainwindow.h"
+#include "../client/p2p_connection.h"
+#include "../websocket_client/websocket_client.h"
+#include "../screen_share/screen_streamer.h"
+#include "../audio/audio.h"
 
 namespace Ui {
 class call_dialog;
@@ -47,6 +48,8 @@ public:
     //начинает звонок
     void start_call();
 
+    void on_datachannel_open();
+
 private slots:
     //еще не реализовал
     void on_pb_reject_clicked();
@@ -69,6 +72,13 @@ private:
     std::shared_ptr<WebSocketClient> ws_woker;
     std::shared_ptr<ScreenStreamer> screen_streamer;
     std::shared_ptr<Audio> audio_worker;
+
+
+    QPushButton *pb_share;
+
+    QPushButton *pb_audio_share;
+
+    QPushButton *pb_endCall;
 
 };
 

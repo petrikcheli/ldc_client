@@ -1,9 +1,9 @@
 #include "p2p_connection.h"
-#include "websocket_client.h"
+#include "../websocket_client/websocket_client.h"
 #include <QDebug>
 #include <thread>
 #include <chrono>
-#include "audio/Audio_parametrs.h"
+#include "../audio/Audio_parametrs.h"
 
 
 using ews_type = WebSocketClient::Etype_message;

@@ -21,6 +21,28 @@ call_dialog::call_dialog(
     this->screen_streamer = screen_streamer;
     this->audio_worker = audio_worker;
     screen_streamer->set_label(ui->label);
+
+    pb_share = new QPushButton("включить демонстрацию");
+    //pb_share->setObjectName("share_button");
+
+    pb_audio_share = new QPushButton("включить звук");
+    //pb_share->setObjectName("audio_share_button");
+
+    pb_endCall = new QPushButton("завершить звонок");
+    //pb_endCall->setObjectName("endCall_button");
+
+    // Соединяем сигналы и слоты
+    connect(pb_share, &QPushButton::clicked, this, &call_dialog::onShareClicked);
+    connect(pb_endCall, &QPushButton::clicked, this, &call_dialog::onEndCallClicked);
+    connect(pb_audio_share, &QPushButton::clicked, this, &call_dialog::onShareAudioClicked);
+
+    ui->gridLayout->addWidget(pb_share);
+    ui->gridLayout->addWidget(pb_endCall);
+    ui->gridLayout->addWidget(pb_audio_share);
+
+    pb_endCall->hide();
+    pb_audio_share->hide();
+    pb_share->hide();
 }
 
 call_dialog::~call_dialog()
@@ -46,29 +68,26 @@ void call_dialog::on_pb_accept_clicked()
     rtc::Candidate c_candidate(msg_candidate["candidate"], msg_candidate["sdpMid"]);
     p2p_worker->addRemoteCandidate(msg_candidate["candidate"], msg_candidate["sdpMid"]);
 
+    // тут сделать ожидание подключения
+}
+
+void call_dialog::on_datachannel_open(){
     ui->label->show();
 
     ui->pb_accept->hide();
     ui->pb_reject->hide();
 
 
-    QPushButton *share = new QPushButton("включить демонстрацию");
-    share->setObjectName("share_button");
+    pb_endCall->show();
+    pb_audio_share->show();
+    pb_share->show();
 
-    QPushButton *endCall = new QPushButton("завершить звонок");
-    endCall->setObjectName("endCall_button");
-
-    ui->gridLayout->addWidget(share);
-    ui->gridLayout->addWidget(endCall);
-
-    // Соединяем сигналы и слоты
-    connect(share, &QPushButton::clicked, this, &call_dialog::onShareClicked);
-    connect(endCall, &QPushButton::clicked, this, &call_dialog::onEndCallClicked);
 
     //мне необходимо создать peer_connection
     //отправить данные, чтобы собеседник мог подключитьться
     //мне необходимо открыть трансляцию
     audio_worker->open_out_stream();
+
 }
 
 void call_dialog::onShareClicked()
@@ -84,9 +103,21 @@ void call_dialog::onShareClicked()
 
 void call_dialog::onShareAudioClicked()
 {
-    qDebug() << "share audio on";
-    audio_worker->open_in_stream();
-    audio_worker->open_out_stream();
+    if( !audio_worker->is_open_in()){
+        qDebug() << "open share audio";
+        audio_worker->open_in_stream();
+        audio_worker->open_out_stream();
+    }
+    if( !audio_worker->is_shared()){
+        qDebug() << "shared audio on";
+        audio_worker->start_in_stream();
+    } else {
+        qDebug() << "shared audio off";
+        audio_worker->stop_in_stream();
+    }
+    // qDebug() << "share audio on";
+    // audio_worker->open_in_stream();
+    // audio_worker->open_out_stream();
 }
 
 void call_dialog::onEndCallClicked()
@@ -114,25 +145,21 @@ void call_dialog::on_remote_call_ended()
         qDebug() << "screen stop";
         screen_streamer->stop();
     }
+    //раскоментрирую когда сделаю этот функционал
+    /*
+    if(audio_worker->is_shared()){
+        qDebug() << "auido stop";
+        audio_worker->stop();
+    }
+    */
     hide_ui_end_call();
 }
 
 void call_dialog::hide_ui_end_call()
 {
-    QPushButton *share = findChild<QPushButton *>("share_button");
-    QPushButton *endCall = findChild<QPushButton *>("endCall_button");
-
-    if (share) {
-        ui->gridLayout->removeWidget(share);
-        delete share;
-    }
-
-    if (endCall) {
-        ui->gridLayout->removeWidget(endCall);
-        delete endCall;
-    }
-
-    //ui->label->hide();
+    pb_endCall->hide();
+    pb_audio_share->hide();
+    pb_share->hide();
 
     ui->pb_accept->show();
     ui->pb_reject->show();
@@ -142,42 +169,15 @@ void call_dialog::hide_ui_end_call()
 
 void call_dialog::start_call()
 {
-    // //this->show();
-
-    // ui->label->hide();
-
-    // ui->pb_accept->hide();
-    // ui->pb_reject->hide();
-
-    // QPushButton *cancel = new QPushButton("отменить звонок");
-    // cancel->setObjectName("cancel");
-
-    // ui->gridLayout->addWidget(cancel);
-
     ui->label->show();
 
     ui->pb_accept->hide();
     ui->pb_reject->hide();
 
+    pb_endCall->show();
+    pb_audio_share->show();
+    pb_share->show();
 
-    QPushButton *share = new QPushButton("включить демонстрацию");
-    share->setObjectName("share_button");
-
-    QPushButton *audio_share = new QPushButton("включить звук");
-    share->setObjectName("audio_share_button");
-
-    QPushButton *endCall = new QPushButton("завершить звонок");
-    endCall->setObjectName("endCall_button");
-
-
-
-    ui->gridLayout->addWidget(share);
-    ui->gridLayout->addWidget(endCall);
-    ui->gridLayout->addWidget(audio_share);
-
-    // Соединяем сигналы и слоты
-    connect(share, &QPushButton::clicked, this, &call_dialog::onShareClicked);
-    connect(endCall, &QPushButton::clicked, this, &call_dialog::onEndCallClicked);
-    connect(audio_share, &QPushButton::clicked, this, &call_dialog::onShareAudioClicked);
+    // тут тоже нужно будет сделать ожидание
 }
 

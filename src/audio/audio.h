@@ -13,9 +13,24 @@ class Audio
 public:
     Audio();
     boost::signals2::signal<void(std::queue<std::shared_ptr<std::vector<unsigned char>>>&)> signalAudioCaptured;
+
     void initialization_device();
+
+    bool is_shared();
+    bool is_open_in();
+
     void open_in_stream();
     void open_out_stream();
+
+    void stop_in_stream();
+    void stop_out_stream();
+
+    void start_in_stream();
+    void start_out_stream();
+
+    void close_in_stream();
+    void close_out_stream();
+
     std::queue<std::shared_ptr<std::vector<unsigned char>>>in_data;
     std::queue<std::shared_ptr<std::vector<float>>>out_data;
     void decoded_voice(std::shared_ptr<std::vector<unsigned char>> ar);
@@ -48,6 +63,8 @@ private:
     static std::mutex queue_mutex_;
     PaError err;
 
+    bool flag_is_shared_;
+    bool flag_is_open_in_;
 
     int number_input_device = 0;
     int number_output_device = 0;

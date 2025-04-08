@@ -47,6 +47,7 @@ int Audio::record_audio(const void *input_buffer, void *output_buffer, unsigned 
             // Блокируем мьютекс перед добавлением в очередь
         std::lock_guard<std::mutex> lock(queue_mutex_);
         audio->in_data.push(encoded_data);
+        std::cerr << "size queue = " << audio->in_data.size() << std::endl;
         std::cerr << "send signal auido captured " << std::endl;
         audio->signalAudioCaptured(audio->in_data);
     }
@@ -93,6 +94,14 @@ void Audio::initialization_device()
     output_param.hostApiSpecificStreamInfo = NULL;
 }
 
+bool Audio::is_shared(){
+    return flag_is_shared_;
+}
+
+bool Audio::is_open_in(){
+    return flag_is_open_in_;
+}
+
 void Audio::open_in_stream()
 {
     err = Pa_OpenStream(
@@ -110,6 +119,8 @@ void Audio::open_in_stream()
 
     err = Pa_StartStream(in_stream);
     check_err(err);
+    flag_is_shared_ = true;
+    flag_is_open_in_ = true;
 }
 
 void Audio::open_out_stream()
@@ -128,6 +139,44 @@ void Audio::open_out_stream()
     check_err(err);
 
     err = Pa_StartStream(out_stream);
+    check_err(err);
+}
+
+void Audio::stop_in_stream()
+{
+    err = Pa_StopStream(in_stream);
+    check_err(err);
+    flag_is_shared_ = false;
+}
+
+void Audio::stop_out_stream()
+{
+    err = Pa_StopStream(out_stream);
+    check_err(err);
+}
+
+void Audio::start_in_stream()
+{
+    err = Pa_StartStream(in_stream);
+    check_err(err);
+    flag_is_shared_ = true;
+}
+void Audio::start_out_stream()
+{
+    err = Pa_StartStream(out_stream);
+    check_err(err);
+}
+
+void Audio::close_in_stream()
+{
+    err = Pa_CloseStream(in_stream);
+    check_err(err);
+    flag_is_open_in_ = false;
+}
+
+void Audio::close_out_stream()
+{
+    err = Pa_CloseStream(out_stream);
     check_err(err);
 }
 
@@ -153,6 +202,7 @@ Audio::encoded_voice(const float* in_data, size_t size_data, opus_int32& size_en
         return nullptr;
     }
     encoded_data->resize(size_en_data);
+
     return encoded_data;
 }
 

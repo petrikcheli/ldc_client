@@ -6,7 +6,9 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include <QByteArray>
+#include "../enums/es_p2p.h"
 
+using namespace enums;
 using json = nlohmann::json;
 
 class P2PConnection
@@ -44,6 +46,8 @@ public:
     //ссылка на функцию которая отправляет данные для audio потока
     //будет использоваться метод из audio (decode_frame)
     std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame;
+
+    std::function<void(es_p2p)> send_signal;
 
     //std::function<void(const rtc::Description &)> on_local_description;
 
@@ -101,6 +105,7 @@ private:
     void init_video_track();
 
     void init_audio_track();
+
     std::shared_ptr<std::vector<unsigned char> > sh_ptr_to_vec_UnC_ptr(rtc::message_ptr vec);
 };
 

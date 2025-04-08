@@ -23,16 +23,24 @@
 #include <nlohmann/json.hpp>
 //#include <rtc/rtc.hpp
 
-#include "p2p_connection.h"
-#include "websocket_client.h"
-#include "screen_streamer.h"
-#include "call_dialog.h"
-#include "audio/audio.h"
-#include "audio/Audio_parametrs.h"
+#include "../client/p2p_connection.h"
+#include "../websocket_client/websocket_client.h"
+#include "../screen_share/screen_streamer.h"
+#include "../audio/audio.h"
+#include "../audio/Audio_parametrs.h"
+#include "../call_dialog/call_dialog.h"
+#include "../enums/es_p2p.h"
+//#include "p2p_connection.h"
+//#include "websocket_client.h"
+//#include "screen_streamer.h"
+
+//#include "audio/audio.h"
+
 
 using namespace boost::asio;
 using namespace boost::beast;
 using namespace std;
+using namespace enums;
 using json = nlohmann::json;
 using ews_type = WebSocketClient::Etype_message;
 
@@ -71,6 +79,8 @@ signals:
 private:
 
     void handle_message(const nlohmann::json &msg);
+
+    void handle_p2p_signal(es_p2p signal);
 
     void set_self_id(const std::string &self_id){this->self_id = self_id;}
     void set_peer_id(const std::string &peer_id){this->peer_id = peer_id;}

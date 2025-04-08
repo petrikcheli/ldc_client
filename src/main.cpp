@@ -160,7 +160,7 @@ int main() {
 }
 */
 
-#include "mainwindow.h"
+#include "ui/mainwindow.h"
 //#include "p2p.h"
 
 #include <QApplication>
