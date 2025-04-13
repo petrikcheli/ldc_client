@@ -57,6 +57,9 @@ private slots:
     //метод который принимает звонок, убирает кнопки, ставит новые
     void on_pb_accept_clicked();
 
+    //метод который отменяет звонок если человек перехотел звонить
+    void onCancelclicked();
+
     //включает и выключается трансляцию экрана
     void onShareClicked();
 
@@ -79,6 +82,8 @@ private:
     QPushButton *pb_audio_share;
 
     QPushButton *pb_endCall;
+
+    QPushButton *pb_cancelCall;
 
 };
 

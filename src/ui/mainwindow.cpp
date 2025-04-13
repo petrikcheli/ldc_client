@@ -65,6 +65,9 @@ MainWindow::MainWindow( io_context &ioc, ip::tcp::resolver &resolver, QWidget *p
             if(audio_worker_) {
                 audio_worker_->decoded_voice(frame);
             }
+        },
+        [this](es_p2p signal){
+            this->handle_p2p_signal(signal);
         }
     );
 

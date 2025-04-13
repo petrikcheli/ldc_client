@@ -17,7 +17,8 @@ public:
     // инициализирует ссылки на функции
     P2PConnection(std::function<void(const nlohmann::json &)> send_p2p_data_on_server,
                   std::function<void(const QByteArray &)> on_share_data,
-                  std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame);
+                  std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame,
+                  std::function<void(es_p2p)> send_signal);
 
     // инициализирует peer_connection_ data_channel_ self и peer id
     // и начинает процесс отправки offer

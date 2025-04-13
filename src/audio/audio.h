@@ -63,8 +63,8 @@ private:
     static std::mutex queue_mutex_;
     PaError err;
 
-    bool flag_is_shared_;
-    bool flag_is_open_in_;
+    bool flag_is_shared_{false};
+    bool flag_is_open_in_{false};
 
     int number_input_device = 0;
     int number_output_device = 0;

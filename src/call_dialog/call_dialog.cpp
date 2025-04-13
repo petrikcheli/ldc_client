@@ -31,22 +31,33 @@ call_dialog::call_dialog(
     pb_endCall = new QPushButton("завершить звонок");
     //pb_endCall->setObjectName("endCall_button");
 
+    pb_cancelCall = new QPushButton("отменить");
+
     // Соединяем сигналы и слоты
     connect(pb_share, &QPushButton::clicked, this, &call_dialog::onShareClicked);
     connect(pb_endCall, &QPushButton::clicked, this, &call_dialog::onEndCallClicked);
     connect(pb_audio_share, &QPushButton::clicked, this, &call_dialog::onShareAudioClicked);
+    connect(pb_cancelCall, &QPushButton::clicked, this, &call_dialog::onCancelclicked);
+
 
     ui->gridLayout->addWidget(pb_share);
     ui->gridLayout->addWidget(pb_endCall);
     ui->gridLayout->addWidget(pb_audio_share);
+    ui->gridLayout->addWidget(pb_cancelCall);
+
 
     pb_endCall->hide();
     pb_audio_share->hide();
     pb_share->hide();
+    pb_cancelCall->hide();
 }
 
 call_dialog::~call_dialog()
 {
+    delete pb_share;
+    delete pb_endCall;
+    delete pb_audio_share;
+    delete pb_cancelCall;
     delete ui;
 }
 
@@ -71,13 +82,19 @@ void call_dialog::on_pb_accept_clicked()
     // тут сделать ожидание подключения
 }
 
-void call_dialog::on_datachannel_open(){
-    ui->label->show();
+void call_dialog::onCancelclicked(){
+    hide_ui_end_call();
+    //отправить чуваку то, что мы отменили звонок
+}
 
+void call_dialog::on_datachannel_open(){
+
+
+    if(pb_cancelCall->isVisible()) pb_cancelCall->hide();
     ui->pb_accept->hide();
     ui->pb_reject->hide();
 
-
+    if(!pb_cancelCall->isVisible())ui->label->show();
     pb_endCall->show();
     pb_audio_share->show();
     pb_share->show();
@@ -174,9 +191,11 @@ void call_dialog::start_call()
     ui->pb_accept->hide();
     ui->pb_reject->hide();
 
-    pb_endCall->show();
-    pb_audio_share->show();
-    pb_share->show();
+    pb_cancelCall->show();
+
+    //pb_endCall->show();
+    //pb_audio_share->show();
+    //pb_share->show();
 
     // тут тоже нужно будет сделать ожидание
 }

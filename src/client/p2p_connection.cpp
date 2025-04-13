@@ -55,12 +55,14 @@ std::shared_ptr<std::vector<unsigned char>> P2PConnection::sh_ptr_to_vec_UnC_ptr
 
 P2PConnection::P2PConnection(std::function<void (const nlohmann::json &)> send_p2p_data_on_server,
                              std::function<void (const QByteArray &)> on_share_data,
-                             std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame)
+                             std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame,
+                             std::function<void(es_p2p)>send_signal)
 {
     rtc::InitLogger(rtc::LogLevel::Debug);
     this->send_p2p_data_on_server = send_p2p_data_on_server;
     this->on_share_data = on_share_data;
     this->on_share_audio_frame = on_share_audio_frame;
+    this->send_signal = send_signal;
 }
 
 void P2PConnection::create_offer(const std::string &self_id_, const std::string &peer_id_)
@@ -71,7 +73,7 @@ void P2PConnection::create_offer(const std::string &self_id_, const std::string 
     //сюда нужно добавить data_channel_->open()
     //data_channel_.reset();
 
-    rtc::Description::Video media("test", rtc::Description::Direction::SendOnly);
+    rtc::Description::Video media("test", rtc::Description::Direction::SendRecv);
     media.addH264Codec(96);
     media.setBitrate(3000);
     media.addSSRC(1234, "video-send");
@@ -79,7 +81,7 @@ void P2PConnection::create_offer(const std::string &self_id_, const std::string 
     init_video_track();
 
 
-    auto audio = rtc::Description::Audio("audio-stream");
+    auto audio = rtc::Description::Audio("audio-stream", rtc::Description::Direction::SendRecv);
     audio.addOpusCodec(111);
     audio.addSSRC(2, "audio-stream", "stream1", "audio-stream");
 
@@ -145,7 +147,7 @@ void P2PConnection::addRemoteCandidate(const std::string &candidate_msg, const s
 
 void P2PConnection::init(const std::string &candidate_type)
 {
-    config_.iceServers.push_back( {"stun:stun.l.google.com:19302"} );
+    config_.iceServers.push_back( {"stun:stun2.l.google.com:19302"} );
 
     // Создаем PeerConnection
     peer_connection_ = std::make_shared<rtc::PeerConnection>( config_ );
@@ -168,8 +170,8 @@ void P2PConnection::init(const std::string &candidate_type)
 
     // Обработчик ICE-кандидатов
     peer_connection_->onLocalCandidate( [this, candidate_type]( rtc::Candidate candidate ) {
-        //if( candidate.type() == rtc::Candidate::Type::ServerReflexive ){
-        if(candidate.type() == rtc::Candidate::Type::Host){
+        if( candidate.type() == rtc::Candidate::Type::ServerReflexive ){
+        // if(candidate.type() == rtc::Candidate::Type::Host){
             json candidate_msg = {
                 //{"type", WebSocketClient::type_str[ews_type::CANDIDATE]},
                 {"type", candidate_type},
@@ -188,8 +190,13 @@ void P2PConnection::init(const std::string &candidate_type)
         if (state == rtc::PeerConnection::State::Connected) {
             qDebug() << "PeerConnection accept!";
 
-
+            send_signal(es_p2p::OPEN_DATACHANNEL);
         }
+        qDebug() << "PeerConnection state changed: " << static_cast<int>(state);
+    });
+
+    peer_connection_->onGatheringStateChange([](rtc::PeerConnection::GatheringState state) {
+        qDebug() << "Gathering state changed: " << static_cast<int>(state);
     });
 
     peer_connection_->onDataChannel( [this](std::shared_ptr<rtc::DataChannel> dc ) {

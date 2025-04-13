@@ -18,6 +18,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         audio/audio.h audio/audio.cpp
         audio/Audio_parametrs.h
         enums/es_p2p.h
+        video_camera/video_camera.h video_camera/video_camera.cpp
     )
 else()
     if(ANDROID)
