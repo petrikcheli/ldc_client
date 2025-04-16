@@ -61,7 +61,11 @@ int Audio::play_callback(const void *inputBuffer, void *outputBuffer, unsigned l
     size_t framesToCopy = framesPerBuffer;
     std::lock_guard<std::mutex> lock(queue_mutex_);
     if (audio->out_data.size() > 0) {
-
+        if(audio->out_data.size() > 5){
+            for(int i = 0; i < audio->out_data.size()-1; ++i){
+                audio->out_data.pop();
+            }
+        }
         std::vector<float> data_out = *audio->out_data.front();
         std::copy(data_out.data(), data_out.data()+daupi::FRAMES_PER_BUFFER, output);
         audio->out_data.pop();
@@ -178,6 +182,11 @@ void Audio::close_out_stream()
 {
     err = Pa_CloseStream(out_stream);
     check_err(err);
+}
+
+void Audio::close()
+{
+
 }
 
 std::shared_ptr<std::vector<unsigned char>>

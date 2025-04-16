@@ -161,6 +161,7 @@ int main() {
 */
 
 #include "ui/mainwindow.h"
+
 //#include "p2p.h"
 
 #include <QApplication>
@@ -171,9 +172,10 @@ int main(int argc, char *argv[])
     io_context ioc;
     ip::tcp::resolver resolver(ioc);
     QApplication a(argc, argv);
+
     MainWindow w(ioc, resolver);
     std::thread io_thread([&ioc]() { ioc.run(); });
-    w.show();
+    // w.show();
     io_thread.detach();
     //reader.detach();
     return a.exec();

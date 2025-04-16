@@ -4,4 +4,7 @@ namespace enums{
         OPEN_DATACHANNEL,
         CLOSE_DATACHANNEL
     };
+    enum E_user_data{
+
+    };
 }

@@ -31,6 +31,8 @@ public:
     void close_in_stream();
     void close_out_stream();
 
+    void close();
+
     std::queue<std::shared_ptr<std::vector<unsigned char>>>in_data;
     std::queue<std::shared_ptr<std::vector<float>>>out_data;
     void decoded_voice(std::shared_ptr<std::vector<unsigned char>> ar);

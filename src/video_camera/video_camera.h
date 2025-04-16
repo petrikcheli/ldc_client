@@ -15,6 +15,10 @@
 #include <QPixmap>
 #include <QWidget>
 #include <QDebug>
+#include <QCoreApplication>
+#include <QThread>
+#include <QMutex>
+#include <QQueue>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -28,22 +32,29 @@ extern "C" {
 
 #include <QObject>
 
-class video_camera : public QObject {
+class Video_camera : public QObject {
     Q_OBJECT
 
 public:
-    //video_camera();
-    explicit video_camera(QLabel *label, QLabel *label_2, QObject *parent = nullptr);
-    ~video_camera();
+    //Video_camera();
+    explicit Video_camera( QObject *parent = nullptr);
+    ~Video_camera();
     boost::signals2::signal<void(std::queue<std::shared_ptr<std::vector<uint8_t>>>&)> signalVideoCaptured;
 
     std::queue<std::shared_ptr<std::vector<uint8_t>>>in_data;
     std::queue<std::shared_ptr<std::vector<float>>>out_data;
 
     void init_device();
+    void init_decoder();
     void decode_frame(AVPacket* packet);
     AVPacket* encode_frame(AVFrame* srcFrame);
-    void start_stream();
+    void capture_frame();
+    void set_lables(QLabel *label, QLabel *label_2);
+    //выключает трансляцию
+    void stop();
+
+    //выводит транслируется ли камера
+    bool is_shared();
 
     QImage avFrameToQImage(AVFrame* frame, AVPixelFormat pix_fmt) {
         SwsContext* swsCtx = sws_getContext(frame->width, frame->height, pix_fmt,
@@ -60,10 +71,6 @@ public:
         return img;
     }
 
-    void startTimer() {
-        timer->start(50);  // Запуск таймера с интервалом 50 мс
-    }
-
     void handle_received_packet(const std::shared_ptr<std::vector<uint8_t>>& buffer) {
         AVPacket* packet = av_packet_alloc();
         av_new_packet(packet, buffer->size());
@@ -76,11 +83,12 @@ public:
         av_packet_free(&packet);
     }
 
+    //включает трансляцию
+public slots:
+    void start();
+
 signals:
     void startTimerSignal(); // Сигнал для запуска таймера в основном потоке
-
-public slots:
-    void share_start();
 
 public:
     AVFormatContext* fmtCtx = nullptr;
@@ -101,8 +109,19 @@ public:
     AVFrame* yuvFrame = nullptr;//av_frame_alloc();
     AVFrame* decodedFrame = nullptr;//av_frame_alloc();
     struct SwsContext* swsCtx;
-    QTimer * timer;
+
     QLabel* labelDecoded;
     QLabel *label_original;
+
+
+private:
+    // QLabel для отображения
+    QLabel *label_;
+
+    // Таймер для обновления
+    QTimer *timer_;
+
+    bool flag_is_Shared_{false};
+
 
 };

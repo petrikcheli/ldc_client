@@ -12,7 +12,7 @@ class ScreenStreamer : public QObject {
     Q_OBJECT
 
 public:
-    explicit ScreenStreamer(QLabel *label, std::function<void( const QByteArray & )> send_callback,
+    explicit ScreenStreamer(std::function<void( const QByteArray & )> send_callback,
                              QObject *parent = nullptr);
 
     // Метод для обновления кадра
@@ -28,7 +28,7 @@ public:
     bool is_shared();
 
     //установка label для трансляции
-    void set_label(QLabel *label){this->label_ = label;}
+    void set_labels(QLabel *label_self, QLabel *label_peer);
 
 signals:
     void stop_share_signal();
@@ -36,7 +36,9 @@ signals:
 private:
 
     // QLabel для отображения
-    QLabel *label_;
+    QLabel *label_self_;
+
+    QLabel *label_peer_;
 
     // Таймер для обновления
     QTimer *timer_;

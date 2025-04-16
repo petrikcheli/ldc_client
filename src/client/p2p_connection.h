@@ -18,6 +18,7 @@ public:
     P2PConnection(std::function<void(const nlohmann::json &)> send_p2p_data_on_server,
                   std::function<void(const QByteArray &)> on_share_data,
                   std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame,
+                  std::function<void(const std::shared_ptr<std::vector<uint8_t>>)> on_share_video_frame,
                   std::function<void(es_p2p)> send_signal);
 
     // инициализирует peer_connection_ data_channel_ self и peer id
@@ -48,6 +49,8 @@ public:
     //будет использоваться метод из audio (decode_frame)
     std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame;
 
+    std::function<void(std::shared_ptr<std::vector<uint8_t>>)> on_share_video_frame;
+
     std::function<void(es_p2p)> send_signal;
 
     //std::function<void(const rtc::Description &)> on_local_description;
@@ -62,9 +65,9 @@ public:
 
     //отправка трансляции экрана собеседнику
     //этот метод пойдет в screen_streamer
-    void send_frame_p2p(const QByteArray &data);
+    void send_video_screen_p2p(const QByteArray &data);
 
-    void send_video_frame_p2p(const QByteArray &data);
+    void send_video_camera_frame_p2p(std::queue<std::shared_ptr<std::vector<uint8_t>>>& q_video);
 
     void send_audio_frame_p2p(std::queue<std::shared_ptr<std::vector<unsigned char>>>& q_voice);
 

@@ -6,6 +6,7 @@
 #include "../audio/Audio_parametrs.h"
 
 
+
 using ews_type = WebSocketClient::Etype_message;
 
 //P2PConnection::P2PConnection() {}
@@ -32,6 +33,14 @@ std::shared_ptr<std::vector<unsigned char>> vector_to_vec_UnC_ptr(const rtc::bin
     return vec_UnC_ptr;
 }
 
+std::shared_ptr<std::vector<uint8_t>> convert_binary_to_uint8_ptr(const rtc::binary& binary) {
+    auto result = std::make_shared<std::vector<uint8_t>>();
+    result->reserve(binary.size());
+    std::transform(binary.begin(), binary.end(), std::back_inserter(*result),
+                   [](std::byte b) { return static_cast<uint8_t>(b); });
+    return result;
+}
+
 std::shared_ptr<std::vector<unsigned char>> P2PConnection::sh_ptr_to_vec_UnC_ptr(rtc::message_ptr vec)
 {
     auto vec_UnC_ptr = std::make_shared<std::vector<unsigned char>>();
@@ -56,12 +65,14 @@ std::shared_ptr<std::vector<unsigned char>> P2PConnection::sh_ptr_to_vec_UnC_ptr
 P2PConnection::P2PConnection(std::function<void (const nlohmann::json &)> send_p2p_data_on_server,
                              std::function<void (const QByteArray &)> on_share_data,
                              std::function<void(std::shared_ptr<std::vector<unsigned char>>)> on_share_audio_frame,
+                             std::function<void(const std::shared_ptr<std::vector<uint8_t>>)> on_share_video_frame,
                              std::function<void(es_p2p)>send_signal)
 {
     rtc::InitLogger(rtc::LogLevel::Debug);
     this->send_p2p_data_on_server = send_p2p_data_on_server;
     this->on_share_data = on_share_data;
     this->on_share_audio_frame = on_share_audio_frame;
+    this->on_share_video_frame = on_share_video_frame;
     this->send_signal = send_signal;
 }
 
@@ -72,12 +83,30 @@ void P2PConnection::create_offer(const std::string &self_id_, const std::string 
     init(WebSocketClient::type_str[ews_type::CANDIDATE]);
     //сюда нужно добавить data_channel_->open()
     //data_channel_.reset();
+//media.setBitrate(2000000); // сделать const значение для этого
 
-    rtc::Description::Video media("test", rtc::Description::Direction::SendRecv);
-    media.addH264Codec(96);
-    media.setBitrate(3000);
-    media.addSSRC(1234, "video-send");
+    rtc::Description::Video media("video-stream", rtc::Description::Direction::SendRecv);
+    media.addH264Codec(102);
+
+    media.addSSRC(1, "video-stream", "stream1", "video-stream");
+
     video_track_ = peer_connection_->addTrack(media);
+    //pc, payloadType, ssrc, cname         ,  msid,
+    //pc, 102        , 1   , "video-stream", "stream1"
+
+    // create RTP configuration
+    auto rtpConfigM = std::make_shared<rtc::RtpPacketizationConfig>(1, "video-stream", 102, rtc::H264RtpPacketizer::ClockRate);
+    // create packetizer
+    auto packetizerM = std::make_shared<rtc::H264RtpPacketizer>(rtc::NalUnit::Separator::LongStartSequence, rtpConfigM, 50000);
+    // add RTCP SR handler
+    auto srReporterM = std::make_shared<rtc::RtcpSrReporter>(rtpConfigM);
+    packetizerM->addToChain(srReporterM);
+    // add RTCP NACK handler
+    auto nackResponderM = std::make_shared<rtc::RtcpNackResponder>();
+    packetizerM->addToChain(nackResponderM);
+    // set handler
+    video_track_->setMediaHandler(packetizerM);
+
     init_video_track();
 
 
@@ -170,8 +199,8 @@ void P2PConnection::init(const std::string &candidate_type)
 
     // Обработчик ICE-кандидатов
     peer_connection_->onLocalCandidate( [this, candidate_type]( rtc::Candidate candidate ) {
-        if( candidate.type() == rtc::Candidate::Type::ServerReflexive ){
-        // if(candidate.type() == rtc::Candidate::Type::Host){
+        //if( candidate.type() == rtc::Candidate::Type::ServerReflexive ){
+        if(candidate.type() == rtc::Candidate::Type::Host){
             json candidate_msg = {
                 //{"type", WebSocketClient::type_str[ews_type::CANDIDATE]},
                 {"type", candidate_type},
@@ -208,9 +237,20 @@ void P2PConnection::init(const std::string &candidate_type)
         data_channel_->onMessage( [this](rtc::message_variant msg ) {
             if (std::holds_alternative<std::string>(msg)) {
                 //pass
-                qDebug() << "maybe is frame";
+                //qDebug() << "maybe is frame";
             } else {
-                qDebug() << "maybe is frame";
+                if(std::to_integer<uint8_t>(std::get<rtc::binary>(msg).at(0)) == 0x02){
+                    rtc::binary h264_payload(std::get<rtc::binary>(msg).begin() + 1,
+                                             std::get<rtc::binary>(msg).end());
+                    on_share_video_frame(convert_binary_to_uint8_ptr(h264_payload));
+                } else if (std::to_integer<uint8_t>(std::get<rtc::binary>(msg).at(0)) == 0x01){
+                    // std::cout << "frame recv" << std::endl;
+                    std::cout << "recv screen frame" << std::get<rtc::binary>(msg).size() << " byte" << std::endl;
+
+                    on_share_data(vectorToQByteArray(rtc::binary ( std::get<rtc::binary>(msg).begin() + 1,
+                                                                 std::get<rtc::binary>(msg).end())));
+                }
+                //qDebug() << "maybe is frame";
                 //on_share_data(vectorToQByteArray(std::get<rtc::binary>(msg)));
                 //main_window->update_screen(vectorToQByteArray(std::get<rtc::binary>(msg)));
             }
@@ -240,6 +280,20 @@ void P2PConnection::init(const std::string &candidate_type)
         //std::string test = track->mid();
         if(track->mid() == "audio-stream"){
             audio_track_ = track;
+
+            // create RTP configuration
+            auto rtpConfig = std::make_shared<rtc::RtpPacketizationConfig>(2, "audio-stream",
+                                                                           111, daupi::SAMPLE_RATE);
+            // create packetizer
+            auto packetizer = make_shared<rtc::OpusRtpPacketizer>(rtpConfig);
+            // add RTCP SR handler
+            auto srReporter = make_shared<rtc::RtcpSrReporter>(rtpConfig);
+            packetizer->addToChain(srReporter);
+            // add RTCP NACK handler
+            auto nackResponder = std::make_shared<rtc::RtcpNackResponder>();
+            packetizer->addToChain(nackResponder);
+            // set handler
+            audio_track_->setMediaHandler(packetizer);
 
             audio_track_->onMessage( [this](rtc::message_variant msg ) {
                 if (std::holds_alternative<std::string>(msg)) {
@@ -287,9 +341,34 @@ void P2PConnection::init(const std::string &candidate_type)
             // // Назначаем обработчик медиа для трека
             // audio_track_->setMediaHandler(depacketizer);
 
-        } else{
+        } else {
             qDebug() << "video track recive";
             video_track_ = track;
+
+            video_track_->onMessage( [this](rtc::message_variant msg) {
+                if (std::holds_alternative<std::string>(msg)) {
+                    //pass
+                    //on_share_audio_frame()
+                    qDebug() << "maybe is frame str";
+                } else {
+                    // Создаем depacketizer
+                    auto depacketizer = std::make_shared<rtc::H264RtpDepacketizer>();
+
+                //     depacketizer->incoming(std::get<rtc::message_vector>(msg), [this, msg](rtc::message_ptr msgsg){
+                //         std::cout << "done video frame " << std::get<rtc::binary>(msg).size() << "byte" <<  std::endl;
+                //         //auto test_vec = vector_to_vec_UnC_ptr(std::get<rtc::binary>(msg));
+
+                //         const size_t rtp_header_size = 12;
+                //         // Извлечем полезную нагрузку (OPUS)
+                //         rtc::binary opus_payload(std::get<rtc::binary>(msg).begin() + rtp_header_size,
+                //                                  std::get<rtc::binary>(msg).end());
+                //         on_share_video_frame(convert_binary_to_uint8_ptr(opus_payload));
+
+                //         qDebug() << "maybe is frame choto drygot";
+                //         on_share_data(vectorToQByteArray(std::get<rtc::binary>(msg)));
+                //      });
+                }
+            });
 
             // Подключаем обработку фреймов
             video_track_->onFrame([this](rtc::binary data, rtc::FrameInfo frame) {
@@ -315,8 +394,22 @@ void P2PConnection::init_data_channel()
     data_channel_->onMessage([this](rtc::message_variant msg) {
         if (std::holds_alternative<std::string>(msg)) {
             //pass
+            //qDebug() << "maybe is frame";
         } else {
-            on_share_data(vectorToQByteArray(std::get<rtc::binary>(msg)));
+            if(std::to_integer<uint8_t>(std::get<rtc::binary>(msg).at(0)) == 0x02){
+                rtc::binary h264_payload(std::get<rtc::binary>(msg).begin() + 1,
+                                         std::get<rtc::binary>(msg).end());
+                on_share_video_frame(convert_binary_to_uint8_ptr(h264_payload));
+            } else if (std::to_integer<uint8_t>(std::get<rtc::binary>(msg).at(0)) == 0x01){
+                // std::cout << "frame recv" << std::endl;
+                std::cout << "recv screen frame" << std::get<rtc::binary>(msg).size() << " byte" << std::endl;
+
+                on_share_data(vectorToQByteArray(rtc::binary ( std::get<rtc::binary>(msg).begin() + 1,
+                                                             std::get<rtc::binary>(msg).end())));
+            }
+            //qDebug() << "maybe is frame";
+            //on_share_data(vectorToQByteArray(std::get<rtc::binary>(msg)));
+            //main_window->update_screen(vectorToQByteArray(std::get<rtc::binary>(msg)));
         }
     });
 }
@@ -378,27 +471,61 @@ void P2PConnection::send_data_p2p(const char* data)
     data_channel_->send( data );
 }
 
-void P2PConnection::send_frame_p2p(const QByteArray &data)
+void P2PConnection::send_video_screen_p2p(const QByteArray &data)
 {
     if(data_channel_->isClosed()) return;
-    rtc::byte* charArray = new rtc::byte[data.size()];
-    memcpy(charArray, data.constData(), data.size());
+    rtc::byte* charArray = new rtc::byte[data.size()+1];
+    memcpy(charArray+1, data.constData(), data.size());
+    charArray[0] = static_cast<std::byte>(0x01);
     data_channel_->send( charArray, data.size() );
     delete[] charArray;
 }
 
-void P2PConnection::send_video_frame_p2p(const QByteArray &data)
+void P2PConnection::send_video_camera_frame_p2p(std::queue<std::shared_ptr<std::vector<uint8_t>>>& q_video)
 {
-    if(video_track_->isClosed()) return;
-    qDebug() << "send audio frame";
-    rtc::byte* charArray = new rtc::byte[data.size()];
-    memcpy(charArray, data.constData(), data.size());
-    std::cout << "send frame" << std::endl;
-    //video_track_->sendFrame(charArray, data.size(), rtc::FrameInfo(1));
-    //video_track_->sendFrame(charArray, data.size(), )
-    video_track_->send( charArray, data.size() );
-    delete[] charArray;
+    //if(video_track_->isClosed()) return;
+    qDebug() << "send video frame";
+    try {
+        std::vector<unsigned char> data_send = *q_video.front();
+
+        rtc::byte* charArray = new rtc::byte[data_send.size()+1];
+
+        memcpy(charArray+1, data_send.data(), data_send.size());
+        charArray[0] = static_cast<std::byte>(0x02);
+        data_channel_->send(charArray, data_send.size());
+        //video_track_->sendFrame(charArray, data_send.size(), rtc::FrameInfo(0));
+
+        delete[] charArray;
+
+        q_video.pop();
+    } catch (std::exception e) {
+        std::cout << e.what() << std::endl;
+    }
+
 }
+
+// void P2PConnection::send_video_screen_frame_p2p(std::queue<std::shared_ptr<std::vector<uint8_t>>>& q_video)
+// {
+//     //if(video_track_->isClosed()) return;
+//     qDebug() << "send video frame";
+//     try {
+//         std::vector<unsigned char> data_send = *q_video.front();
+
+//         rtc::byte* charArray = new rtc::byte[data_send.size()+1];
+
+//         memcpy(charArray+1, data_send.data(), data_send.size());
+//         charArray[0] = static_cast<std::byte>(0x02);
+//         data_channel_->send(charArray, data_send.size());
+//         //video_track_->sendFrame(charArray, data_send.size(), rtc::FrameInfo(0));
+
+//         delete[] charArray;
+
+//         q_video.pop();
+//     } catch (std::exception e) {
+//         std::cout << e.what() << std::endl;
+//     }
+
+// }
 
 void P2PConnection::send_audio_frame_p2p(std::queue<std::shared_ptr<std::vector<unsigned char>>> &q_voice)
 {

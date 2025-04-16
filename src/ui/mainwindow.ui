@@ -6,106 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1010</width>
-    <height>586</height>
+    <width>562</width>
+    <height>417</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralwidget">
-   <widget class="QLineEdit" name="peer_id">
-    <property name="geometry">
-     <rect>
-      <x>104</x>
-      <y>60</y>
-      <width>113</width>
-      <height>24</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pb_reg">
-    <property name="geometry">
-     <rect>
-      <x>225</x>
-      <y>27</y>
-      <width>80</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>reg</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="self_id">
-    <property name="geometry">
-     <rect>
-      <x>104</x>
-      <y>27</y>
-      <width>113</width>
-      <height>24</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pd_offer">
-    <property name="geometry">
-     <rect>
-      <x>225</x>
-      <y>62</y>
-      <width>80</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>offer</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pb_share">
-    <property name="geometry">
-     <rect>
-      <x>239</x>
-      <y>96</y>
-      <width>80</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>PushButton</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>71</x>
-      <y>148</y>
-      <width>906</width>
-      <height>387</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>TextLabel</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pb_showCallOffer">
-    <property name="geometry">
-     <rect>
-      <x>386</x>
-      <y>32</y>
-      <width>80</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>show call</string>
-    </property>
-   </widget>
-  </widget>
+  <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1010</width>
+     <width>562</width>
      <height>17</height>
     </rect>
    </property>

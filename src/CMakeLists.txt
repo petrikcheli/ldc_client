@@ -7,6 +7,8 @@ set(PROJECT_SOURCES
 
 )
 
+
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(boost_libdatachannel
         MANUAL_FINALIZATION
@@ -19,6 +21,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         audio/Audio_parametrs.h
         enums/es_p2p.h
         video_camera/video_camera.h video_camera/video_camera.cpp
+        user_api/user_api.h user_api/user_api.cpp
+        login_ui/login.h login_ui/login.cpp login_ui/login.ui
     )
 else()
     if(ANDROID)
@@ -33,10 +37,13 @@ else()
 endif()
 
 
+include_directories(${FFMPEG_INCLUDE_DIRS})
 target_link_libraries(boost_libdatachannel
     PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     portaudio
+    ${FFMPEG_LIBRARIES}
+    cpr::cpr
     Opus::opus
     Boost::thread
     Boost::filesystem

@@ -13,6 +13,7 @@
 #include "../websocket_client/websocket_client.h"
 #include "../screen_share/screen_streamer.h"
 #include "../audio/audio.h"
+#include "../video_camera/video_camera.h"
 
 namespace Ui {
 class call_dialog;
@@ -29,6 +30,7 @@ public:
         std::shared_ptr<WebSocketClient> ws_woker,
         std::shared_ptr<ScreenStreamer> screen_streamer,
         std::shared_ptr<Audio> audio_worker,
+        std::shared_ptr<Video_camera> video_camera_worker,
         QWidget *parent = nullptr);
 
     ~call_dialog();
@@ -60,7 +62,9 @@ private slots:
     //метод который отменяет звонок если человек перехотел звонить
     void onCancelclicked();
 
-    //включает и выключается трансляцию экрана
+    void onShareScreenClicked();
+
+    //включает и выключает видео
     void onShareClicked();
 
     //включает и выключает звук
@@ -75,7 +79,10 @@ private:
     std::shared_ptr<WebSocketClient> ws_woker;
     std::shared_ptr<ScreenStreamer> screen_streamer;
     std::shared_ptr<Audio> audio_worker;
+    std::shared_ptr<Video_camera> video_camera_worker;
 
+
+    QPushButton *pb_share_screen;
 
     QPushButton *pb_share;
 

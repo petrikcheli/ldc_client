@@ -5,15 +5,11 @@
 
 //ScreenStreamer::ScreenStreamer() {}
 
-ScreenStreamer::ScreenStreamer(QLabel *label, std::function<void( const QByteArray & )> send_callback,
+ScreenStreamer::ScreenStreamer(std::function<void( const QByteArray & )> send_callback,
                                QObject *parent)
-    : QObject(parent), label_(label), timer_(new QTimer(this))
+    : QObject(parent), timer_(new QTimer(this))
 {
     this->send_callback_ = send_callback;
-
-    // Настройка QLabel
-    label_->setScaledContents(true);    // Масштабируем изображение
-    label_->setMinimumSize(640, 480);   // Устанавливаем размер
 }
 
 void ScreenStreamer::start(){
@@ -37,14 +33,23 @@ bool ScreenStreamer::is_shared()
     return flag_is_Shared_;
 }
 
+void ScreenStreamer::set_labels(QLabel *label_self, QLabel *label_peer)
+{
+    this->label_self_ = label_self;
+    this->label_peer_ = label_peer;
+}
+
 void ScreenStreamer::update_frame(const QByteArray &image_data)
 {
     QImage image;
-    if (image.loadFromData(image_data)) {
+    if (image.loadFromData(image_data, "JPEG")) {
         // Преобразуем QImage → QPixmap и устанавливаем в QLabel
-        label_->setPixmap(QPixmap::fromImage(image));
+        auto pixmap = QPixmap::fromImage(image);
+        QPixmap scaledPixmap = pixmap.scaled(label_self_->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        label_peer_->setPixmap(scaledPixmap);
+        label_peer_->setFixedSize(label_peer_->size());
     } else {
-        qWarning("Ошибка: не удалось загрузить изображение из данных.");
+        qWarning("Error: failed download is data.");
     }
 }
 
@@ -54,6 +59,9 @@ void ScreenStreamer::capture_screen()
     if (screen) {
         QPixmap pixmap = screen->grabWindow(0);
         //setPixmap(pixmap);
+        QPixmap scaledPixmap = pixmap.scaled(label_self_->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        label_self_->setPixmap(scaledPixmap);
+        label_self_->setFixedSize(label_self_->size());
         send_image(pixmap);
     }
 }

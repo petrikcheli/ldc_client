@@ -10,6 +10,9 @@
 #include <QLabel>
 #include <QTimer>
 #include <QBuffer>
+#include <QListWidget>
+#include <QTextBrowser>
+#include <QLineEdit>
 
 #include <iostream>
 #include <string>
@@ -30,6 +33,9 @@
 #include "../audio/Audio_parametrs.h"
 #include "../call_dialog/call_dialog.h"
 #include "../enums/es_p2p.h"
+#include "../video_camera/video_camera.h"
+#include "../login_ui/login.h"
+#include "../user_api/user_api.h"
 //#include "p2p_connection.h"
 //#include "websocket_client.h"
 //#include "screen_streamer.h"
@@ -65,25 +71,38 @@ public:
     //void update_screen(const QByteArray &image_data);
 
 private slots:
-    void on_pb_reg_clicked();
-    void on_pd_offer_clicked();
-    void on_pb_share_clicked();
+    void onLoginSuccessful();
+
+    //void on_pb_reg_clicked();
+    //void on_pd_offer_clicked();
+    //void on_pb_share_clicked();
     void on_showCallOffer(const QString msg);
     void on_showCallAnswer();
     void on_pb_showCallOffer_clicked();
+
+    void sendMessage();
+    void friendSelected(QListWidgetItem *item);
+    void startCall();
+    void openSettings();
 
 signals:
     void show_call_offer(const QString msg); // Сигнал для показа окна
     void show_call_answer();
     void send_candidate_signal(const QString msg);
 private:
-
     void handle_message(const nlohmann::json &msg);
 
     void handle_p2p_signal(es_p2p signal);
 
-    void set_self_id(const std::string &self_id){this->self_id = self_id;}
-    void set_peer_id(const std::string &peer_id){this->peer_id = peer_id;}
+    //void set_self_id(const std::string &self_id){this->self_id = self_id;}
+    //void set_peer_id(const std::string &peer_id){this->peer_id = peer_id;}
+    void set_username();
+
+    void init_ui_mainwindow();
+
+    void init_dialogs();
+
+
 
 private:
     Ui::MainWindow *ui;
@@ -92,18 +111,44 @@ private:
     std::shared_ptr<P2PConnection> p2p_worker_;
     std::shared_ptr<ScreenStreamer> screen_streamer_;
     std::shared_ptr<Audio> audio_worker_;
+    std::shared_ptr<Video_camera> video_camera_worker_;
 
     call_dialog *call_offer;
+    Login *login;
+    User_api *api_worker_;
     std::shared_ptr<std::thread> thread_call_offer;
 
-    std::string self_id;
-    std::string peer_id;
+    //std::string self_id;
+    //std::string peer_id;
+
+    std::string self_username;
+    std::string peer_username;
 
     bool flag_description_send = false;
     bool flag_candidate_send = false;
 
     std::string candidate ;
     std::string sdpMid;
+
+    QThread *encoderThread;
+
+private:
+    QWidget *centralWidget;
+    QHBoxLayout *mainLayout;
+    QWidget *leftPanel;
+    QVBoxLayout *leftLayout;
+    QPushButton *settingsButton;
+    QListWidget *friendsList;
+    QWidget *rightPanel;
+    QVBoxLayout *rightLayout;
+    QLabel *chatLabel;
+    QTextBrowser *chatHistory;
+    QLineEdit *messageInput;
+    QPushButton *sendButton;
+    QPushButton *callButton;
+
+    QHBoxLayout *messageLayout;
+
 };
 #endif // MAINWINDOW_H
 
