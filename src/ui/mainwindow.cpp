@@ -217,6 +217,10 @@ void MainWindow::handle_message(const nlohmann::json &msg)
         qDebug() << "end call";
         call_offer->on_remote_call_ended();
     }
+    else if( type == WebSocketClient::type_str[ews_type::MESSAGE]){
+        qDebug() << "recv message";
+        add_message_dialog(sender, msg[WebSocketClient::type_str[ews_type::MESSAGE]]);
+    }
 }
 
 void MainWindow::handle_p2p_signal(es_p2p signal)
@@ -233,56 +237,72 @@ void MainWindow::handle_p2p_signal(es_p2p signal)
 void MainWindow::init_ui_mainwindow()
 {
     // Центральный виджет
-    centralWidget = new QWidget(this);
-    setCentralWidget(centralWidget);
+    central_widget = new QWidget(this);
+    setCentralWidget(central_widget);
 
     // Главный горизонтальный layout
-    mainLayout = new QHBoxLayout(centralWidget);
+    main_layout = new QHBoxLayout(central_widget);
 
     // ЛЕВАЯ ПАНЕЛЬ
-    leftPanel = new QWidget();
-    leftLayout = new QVBoxLayout(leftPanel);
+    left_panel = new QWidget();
+    left_layout = new QVBoxLayout(left_panel);
 
-    settingsButton = new QPushButton("Настройки");
-    settingsButton->setFixedHeight(30);
+    settings_button = new QPushButton("Настройки");
+    settings_button->setFixedHeight(30);
 
-    friendsList = new QListWidget(); // список друзей
+    friends_list = new QListWidget(); // список друзей
 
-    leftLayout->addWidget(settingsButton);
-    leftLayout->addWidget(friendsList);
-    leftPanel->setLayout(leftLayout);
-    leftPanel->setFixedWidth(200);
+    // Кнопки Друзья / Каналы
+    friends_button = new QPushButton("Друзья");
+    channels_button = new QPushButton("Каналы");
+
+    QHBoxLayout *switchLayout = new QHBoxLayout();
+    switchLayout->addWidget(friends_button);
+    switchLayout->addWidget(channels_button);
+
+    left_layout->addLayout(switchLayout);
+    left_layout->addWidget(settings_button);
+    left_layout->addWidget(friends_list);
+
+    // Подключаем сигналы
+    connect(friends_button, &QPushButton::clicked, this, &MainWindow::show_friends);
+    connect(channels_button, &QPushButton::clicked, this, &MainWindow::show_channels);
+
+    // Стартовый режим
+    current_mode = Mode::Friends;
+    left_panel->setLayout(left_layout);
+    left_panel->setFixedWidth(200);
 
     // ПРАВАЯ ПАНЕЛЬ
-    rightPanel = new QWidget();
-    rightLayout = new QVBoxLayout(rightPanel);
+    right_panel = new QWidget();
+    right_layout = new QVBoxLayout(right_panel);
 
-    chatLabel = new QLabel("Выберите друга для чата");
-    chatLabel->setAlignment(Qt::AlignCenter);
+    chat_label = new QLabel("Выберите друга для чата");
+    chat_label->setAlignment(Qt::AlignCenter);
 
-    chatHistory = new QTextBrowser();
-    messageInput = new QLineEdit();
-    sendButton = new QPushButton("Отправить");
-    callButton = new QPushButton("Позвонить");
+    chat_history = new QTextBrowser();
+    message_lnput = new QLineEdit();
+    send_button = new QPushButton("Отправить");
+    call_button = new QPushButton("Позвонить");
 
-    messageLayout = new QHBoxLayout();
-    messageLayout->addWidget(messageInput);
-    messageLayout->addWidget(sendButton);
+    message_layout = new QHBoxLayout();
+    message_layout->addWidget(message_lnput);
+    message_layout->addWidget(send_button);
 
-    rightLayout->addWidget(chatLabel);
-    rightLayout->addWidget(chatHistory);
-    rightLayout->addLayout(messageLayout);
-    rightLayout->addWidget(callButton);
+    right_layout->addWidget(chat_label);
+    right_layout->addWidget(chat_history);
+    right_layout->addLayout(message_layout);
+    right_layout->addWidget(call_button);
 
     // Сборка главного layout
-    mainLayout->addWidget(leftPanel);
-    mainLayout->addWidget(rightPanel);
+    main_layout->addWidget(left_panel);
+    main_layout->addWidget(right_panel);
 
     // Пример подключения
-    connect(sendButton, &QPushButton::clicked, this, &MainWindow::sendMessage);
-    connect(friendsList, &QListWidget::itemClicked, this, &MainWindow::friendSelected);
-    connect(callButton, &QPushButton::clicked, this, &MainWindow::startCall);
-    connect(settingsButton, &QPushButton::clicked, this, &MainWindow::openSettings);
+    connect(send_button, &QPushButton::clicked, this, &MainWindow::send_message);
+    connect(friends_list, &QListWidget::itemClicked, this, &MainWindow::friend_selected);
+    connect(call_button, &QPushButton::clicked, this, &MainWindow::start_call);
+    connect(settings_button, &QPushButton::clicked, this, &MainWindow::open_settings);
 
     this->init_dialogs();
 
@@ -350,7 +370,7 @@ void MainWindow::init_dialogs()
 {
     auto frends = api_worker_->get_friends();
     for (const auto& user : frends) {
-        this->friendsList->addItem(QString::fromStdString(user["username"]));
+        this->friends_list->addItem(QString::fromStdString(user["username"]));
     }
 }
 
@@ -381,9 +401,9 @@ void MainWindow::on_pb_showCallOffer_clicked()
     call_offer->show();
 }
 
-void MainWindow::sendMessage()
+void MainWindow::send_message()
 {
-    QString text = messageInput->text();
+    QString text = message_lnput->text();
     if (text.isEmpty() || peer_username == "")
         return;
 
@@ -391,34 +411,104 @@ void MainWindow::sendMessage()
     if (success) {
         // добавим в интерфейс
         //QListWidgetItem* item = new QListWidgetItem("Вы: " + text);
-        chatHistory->append("Вы: " + text);
-        messageInput->clear();
+        ws_client_->send_rt_message(self_username, peer_username, text.toStdString());
+        chat_history->append("Вы: " + text);
+        message_lnput->clear();
     }
     //api_worker_->send_message(, peer_username)
 }
 
-void MainWindow::friendSelected(QListWidgetItem *item)
+void MainWindow::add_message_dialog(const std::string &sender_username, const std::string &content)
 {
-    auto friend_name = item->text();
-    peer_username = item->text().toStdString();
 
-    chatLabel->setText("Диалог с " + friend_name);
+    // QString q_sender = QString::fromStdString(sender_username);
+    // QString q_content = QString::fromStdString(content);
+    // QString fullText = q_sender + ": " + q_content;
 
-    // Загружаем историю сообщений (пока просто пример)
-    chatHistory->clear();
-    auto msg_json = api_worker_->get_messages_with_user(peer_username);
-    for (const auto& msg : msg_json) {
-        QString sender = QString::fromStdString(msg["sender_username"]);
-        QString content = QString::fromStdString(msg["content"]);
-        QString fullText = sender + ": " + content;
+    // chatHistory->append(fullText);
+    if (peer_username == sender_username) {
+        QString msgText = QString::fromStdString(sender_username + ": " + content);
+        message_histories[sender_username].append(msgText);
 
-        chatHistory->append(fullText);
+        chat_history->append(msgText);
+    } else if(self_username == sender_username){
+        QString msgText = QString::fromStdString("Вы: " + content);
+        chat_history->append(msgText);
     }
-    //chatHistory->append("<b>" + friend_name + ":</b> Привет!");
-    //chatHistory->append("<b>Вы:</b> Привет, как дела?");
+    else {
+        // Уведомление: можешь добавить иконку, подсветку, popup и т.п.
+        QList<QListWidgetItem*> items = friends_list->findItems(QString::fromStdString(sender_username), Qt::MatchExactly);
+        if (!items.isEmpty()) {
+            items[0]->setBackground(Qt::yellow); // Простой визуальный сигнал
+        }
+    }
 }
 
-void MainWindow::startCall()
+void MainWindow::friend_selected(QListWidgetItem *item)
+{
+    // auto friend_name = item->text();
+    // peer_username = item->text().toStdString();
+
+    // chat_label->setText("Диалог с " + friend_name);
+
+    // chat_history->clear();
+    // auto msg_json = api_worker_->get_messages_with_user(peer_username);
+    // for (const auto& msg : msg_json) {
+    //     add_message_dialog(msg["sender_username"], msg["content"]);
+    // }
+    // item->setBackground(Qt::white);
+    //chatHistory->append("<b>" + friend_name + ":</b> Привет!");
+    //chatHistory->append("<b>Вы:</b> Привет, как дела?");
+
+    if (current_mode == Mode::Friends) {
+        auto friend_name = item->text();
+        peer_username = friend_name.toStdString();
+
+        chat_label->setText("Диалог с " + friend_name);
+        chat_history->clear();
+
+        auto msg_json = api_worker_->get_messages_with_user(peer_username);
+        for (const auto& msg : msg_json) {
+            add_message_dialog(msg["sender_username"], msg["content"]);
+        }
+
+        item->setBackground(Qt::white);
+    }
+    else if (current_mode == Mode::Channels) {
+        QString channelName = item->text();
+        chat_label->setText("Канал: " + channelName);
+        chat_history->clear();
+
+        // Найти ID канала по названию
+        auto channels = api_worker_->get_channels();
+        for (const auto& channel : channels) {
+            if (QString::fromStdString(channel["name"]) == channelName) {
+                selectedChannelId = channel["id"];
+                break;
+            }
+        }
+
+        // Теперь загружаем подканалы
+        friends_list->clear();
+        auto subchannels = api_worker_->get_subchannels(selectedChannelId);
+        for (const auto& sub : subchannels) {
+            QString type = QString::fromStdString(sub["type"]);
+            QString name = QString::fromStdString(sub["name"]);
+
+            if (type == "text") {
+                friends_list->addItem("💬 " + name);
+            } else if (type == "voice") {
+                friends_list->addItem("🎤 " + name);
+            }
+        }
+
+        // Подписать что это подканалы:
+        chat_label->setText("Выберите подканал в " + channelName);
+    }
+
+}
+//TODO: Test sending RTP packets in track
+void MainWindow::start_call()
 {
     //set_peer_id(ui->peer_id->text().toStdString());
     p2p_worker_->create_offer(self_username, peer_username);
@@ -426,8 +516,31 @@ void MainWindow::startCall()
     call_offer->start_call();
 }
 
-void MainWindow::openSettings()
+void MainWindow::open_settings()
 {
 
 }
 
+void MainWindow::show_friends()
+{
+    current_mode = Mode::Friends;
+    friends_list->clear();
+
+    auto friends = api_worker_->get_friends();
+    for (const auto& user : friends) {
+        friends_list->addItem(QString::fromStdString(user["username"]));
+    }
+    chat_label->setText("Выберите друга для чата");
+}
+
+void MainWindow::show_channels()
+{
+    current_mode = Mode::Channels;
+    friends_list->clear();
+
+    auto channels = api_worker_->get_channels(); // <--- тебе нужно будет сделать метод в api_worker_
+    for (const auto& channel : channels) {
+        friends_list->addItem(QString::fromStdString(channel["name"]));
+    }
+    chat_label->setText("Выберите канал");
+}

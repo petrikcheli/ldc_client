@@ -274,7 +274,8 @@ void P2PConnection::init(const std::string &candidate_type)
     //     });
     // });
 
-
+    //FIXME: неправильно инициализируются video и audio, потому что потом невозможно отправлять какой то трек с
+    //       другого устройства
     peer_connection_->onTrack([this](std::shared_ptr<rtc::Track> track) {
         qDebug() << "track receive!";
         //std::string test = track->mid();
@@ -434,6 +435,8 @@ void P2PConnection::init_video_track()
     });
 }
 
+//FIXME: тут должен быть audio_track а не video
+
 void P2PConnection::init_audio_track()
 {
     video_track_->onOpen([this](){
@@ -501,7 +504,6 @@ void P2PConnection::send_video_camera_frame_p2p(std::queue<std::shared_ptr<std::
     } catch (std::exception e) {
         std::cout << e.what() << std::endl;
     }
-
 }
 
 // void P2PConnection::send_video_screen_frame_p2p(std::queue<std::shared_ptr<std::vector<uint8_t>>>& q_video)
@@ -541,8 +543,6 @@ void P2PConnection::send_audio_frame_p2p(std::queue<std::shared_ptr<std::vector<
     } catch (std::exception e) {
         std::cout << e.what() << std::endl;
     }
-
-
 }
 
 void P2PConnection::close_p2p(bool send_end_call)
@@ -563,7 +563,6 @@ void P2PConnection::close_p2p(bool send_end_call)
     }
     // return;
 }
-
 
 void P2PConnection::send_data_p2p(int data)
 {

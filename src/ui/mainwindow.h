@@ -80,15 +80,19 @@ private slots:
     void on_showCallAnswer();
     void on_pb_showCallOffer_clicked();
 
-    void sendMessage();
-    void friendSelected(QListWidgetItem *item);
-    void startCall();
-    void openSettings();
+    void send_message();
+    void friend_selected(QListWidgetItem *item);
+    void start_call();
+    void open_settings();
+    void show_friends();
+    void show_channels();
 
 signals:
     void show_call_offer(const QString msg); // Сигнал для показа окна
     void show_call_answer();
     void send_candidate_signal(const QString msg);
+
+
 private:
     void handle_message(const nlohmann::json &msg);
 
@@ -102,6 +106,7 @@ private:
 
     void init_dialogs();
 
+    void add_message_dialog(const std::string &sender_username, const std::string &content);
 
 
 private:
@@ -116,6 +121,7 @@ private:
     call_dialog *call_offer;
     Login *login;
     User_api *api_worker_;
+    std::map<std::string, QStringList> message_histories;
     std::shared_ptr<std::thread> thread_call_offer;
 
     //std::string self_id;
@@ -133,21 +139,29 @@ private:
     QThread *encoderThread;
 
 private:
-    QWidget *centralWidget;
-    QHBoxLayout *mainLayout;
-    QWidget *leftPanel;
-    QVBoxLayout *leftLayout;
-    QPushButton *settingsButton;
-    QListWidget *friendsList;
-    QWidget *rightPanel;
-    QVBoxLayout *rightLayout;
-    QLabel *chatLabel;
-    QTextBrowser *chatHistory;
-    QLineEdit *messageInput;
-    QPushButton *sendButton;
-    QPushButton *callButton;
+    QWidget *central_widget;
+    QHBoxLayout *main_layout;
+    QWidget *left_panel;
+    QVBoxLayout *left_layout;
+    QPushButton *settings_button;
+    QListWidget *friends_list;
+    QWidget *right_panel;
+    QVBoxLayout *right_layout;
+    QLabel *chat_label;
+    QTextBrowser *chat_history;
+    QLineEdit *message_lnput;
+    QPushButton *send_button;
+    QPushButton *call_button;
 
-    QHBoxLayout *messageLayout;
+    QHBoxLayout *message_layout;
+
+    QPushButton *friends_button;
+    QPushButton *channels_button;
+
+    enum class Mode { Friends, Channels };
+    Mode current_mode;
+
+    int selectedChannelId;
 
 };
 #endif // MAINWINDOW_H

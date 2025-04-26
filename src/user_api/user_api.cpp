@@ -153,3 +153,74 @@ json User_api::get_messages_with_user(const std::string &peer_username){
         return {};
     }
 }
+
+json User_api::get_channels()
+{
+    cpr::Response r = cpr::Get(
+        cpr::Url{base_url + "channels/"},
+        cpr::Header{{"Authorization", "Bearer " + token}}
+        );
+
+    if (r.status_code == 200) {
+        auto channels = nlohmann::json::parse(r.text);
+        return channels;
+        // std::cout << "Channels:\n";
+        // for (const auto& channel : channels) {
+        //     std::cout << "ID: " << channel["id"] << ", Name: " << channel["name"] << "\n";
+        // }
+    } else {
+        std::cout << "Error fetching channels: " << r.text << std::endl;
+        return {};
+    }
+}
+
+json User_api::get_subchannels(int channel_id)
+{
+    cpr::Response r = cpr::Get(
+        cpr::Url{base_url + "channels/" + std::to_string(channel_id) + "/subchannels/"},
+        cpr::Header{{"Authorization", "Bearer " + token}}
+        );
+
+    if (r.status_code == 200) {
+        auto subchannels = nlohmann::json::parse(r.text);
+        return subchannels;
+        // std::cout << "Subchannels in Channel " << channel_id << ":\n";
+        // for (const auto& subchannel : subchannels) {
+        //     std::cout << "ID: " << subchannel["id"] << ", Name: " << subchannel["name"] << "\n";
+        // }
+    } else {
+        std::cout << "Error fetching subchannels: " << r.text << std::endl;
+        return {};
+    }
+}
+
+void User_api::create_channel(const std::string &name)
+{
+    cpr::Response r = cpr::Post(
+        cpr::Url{base_url + "channels/"},
+        cpr::Header{{"Authorization", "Bearer " + token}},
+        cpr::Payload{{"name", name}}
+        );
+
+    if (r.status_code == 201) {
+        std::cout << "Channel created successfully!" << std::endl;
+    } else {
+        std::cout << "Error creating channel: " << r.text << std::endl;
+    }
+}
+
+void User_api::create_subchannel(int channel_id, const std::string &name)
+{
+    cpr::Response r = cpr::Post(
+        cpr::Url{base_url + "channels/" + std::to_string(channel_id) + "/subchannels/"},
+        cpr::Header{{"Authorization", "Bearer " + token}},
+        cpr::Payload{{"name", name}}
+        );
+
+    if (r.status_code == 201) {
+        std::cout << "Subchannel created successfully!" << std::endl;
+    } else {
+        std::cout << "Error creating subchannel: " << r.text << std::endl;
+    }
+}
+

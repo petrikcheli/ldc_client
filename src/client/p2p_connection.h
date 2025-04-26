@@ -11,6 +11,8 @@
 using namespace enums;
 using json = nlohmann::json;
 
+//TODO: не хватает более гибкой попытки подключения к собеседнику
+
 class P2PConnection
 {
 public:

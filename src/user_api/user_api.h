@@ -15,7 +15,8 @@ public:
 
 
 private:
-    std::string base_url = "http://192.168.0.190:8000/account/api/"; // Укороченный путь, без /account/
+    //std::string base_url = "http://192.168.0.190:8000/account/api/"; // Укороченный путь, без /account/
+    std::string base_url = "http://127.0.0.1:8000/account/api/"; // Укороченный путь, без /account/
     std::string token; // Токен для авторизации
 
 public:
@@ -36,6 +37,18 @@ public:
     bool send_message(const std::string &mes, const std::string &peer_username);
 
     json get_messages_with_user(const std::string &peer_username);
+
+    // Получить список каналов
+    json get_channels();
+
+    // Получить подканалы конкретного канала
+    json get_subchannels(int channel_id);
+
+    // Создать канал
+    void create_channel(const std::string& name);
+
+    // Создать подканал в канале
+    void create_subchannel(int channel_id, const std::string& name);
 
     void print_username_user(json &json_data){
         for (const auto& user : json_data) {

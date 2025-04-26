@@ -14,6 +14,7 @@ const std::string WebSocketClient::type_str[20] = {
     "candidate_answer",
     "end_call",
     "end_share",
+    "message",
     "unknown",
     "trash"
 };
@@ -48,6 +49,17 @@ void WebSocketClient::send_message( const nlohmann::json &msg )
     if( ws_ ){
         ws_->write( boost::asio::buffer( msg.dump() ) );
     }
+}
+
+void WebSocketClient::send_rt_message(const std::string &sender, const std::string &target, const std::string &msg)
+{
+    json result_msg = {
+        {"type", WebSocketClient::type_str[WebSocketClient::Etype_message::MESSAGE]},
+        {"sender", sender},
+        {"target", target},
+        {WebSocketClient::type_str[WebSocketClient::Etype_message::MESSAGE], msg}
+    };
+    send_message(result_msg);
 }
 
 void WebSocketClient::receive_loop()

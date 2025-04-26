@@ -158,6 +158,8 @@ void call_dialog::onShareClicked()
     }
 }
 
+//BUG: аудио начинает работать только если два раза нажать на включить звук
+
 void call_dialog::onShareAudioClicked()
 {
     if( !audio_worker->is_open_in()){

@@ -13,6 +13,8 @@ using namespace boost::beast;
 using json = nlohmann::json;
 namespace websocket = boost::beast::websocket;
 
+//TODO: сделать защиту
+
 class WebSocketClient
 {
 public:
@@ -21,6 +23,8 @@ public:
 
     // Метод для отправки сообщения на сервер
     void send_message( const nlohmann::json& msg );
+
+    void send_rt_message(const std::string &sender, const std::string &target, const std::string &msg);
 
     enum Etype_message{
         REGISTER,
@@ -31,6 +35,7 @@ public:
         CANDIDATE_ANSWER,
         END_CALL,
         END_SHARE,
+        MESSAGE,
 
         UNKNOWN,
         TRASH

@@ -8,6 +8,8 @@
 #include <QTimer>
 #include <rtc/rtc.hpp>
 
+//TODO: поменять на ffmpeg и добвиьть кодироваание и декодирование
+
 class ScreenStreamer : public QObject {
     Q_OBJECT
 
