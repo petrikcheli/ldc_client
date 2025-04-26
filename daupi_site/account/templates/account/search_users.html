@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Искать пользователей</h1>
+
+    <form method="get" action="{% url 'search_users' %}">
+        {{ form.as_p }}
+        <button type="submit">Искать</button>
+    </form>
+
+    {% if users %}
+        <h3>Пользователь найден:</h3>
+        <ul>
+            {% for user in users %}
+                <li>{{ user.username }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Пользователь не найден.</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <link href="{% static 'css/base.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div id="header">
+        <span class="logo">Daupi</span>
+        {% if request.user.is_authenticated %}
+            <ul class="menu">
+                    <li {% if section == "dashboard" %}class="selected"{% endif %}>
+                        <a href="{% url "dashboard" %}">Главная</a>
+                    </li>
+                    {% if user.is_authenticated and user.profile.role != "employer" %}
+                        <li {% if section == "people" %}class="selected"{% endif %}>
+                            <a href="{% url "friend_requests" %}">Заявки в друзья</a>
+                        </li>
+                    {% endif %}
+                    {% if user.is_authenticated and user.profile.role != "employer" %}
+                        <li {% if section == "people" %}class="selected"{% endif %}>
+                            <a href="{% url "search_users" %}">Искать пользователя</a>
+                        </li>
+                    {% endif %}   
+                    {% if user.is_authenticated and user.profile.role != "employer" %}
+                        <li {% if section == "people" %}class="selected"{% endif %}>
+                            <a href="{% url "send_friend_request" %}">Добавить в друзья</a>
+                        </li>
+                    {% endif %}  
+                    {% if user.is_authenticated and user.profile.role != "employer" %}
+                        <li {% if section == "people" %}class="selected"{% endif %}>
+                            <a href="{% url "friends" %}">Мои друзья</a>
+                        </li>
+                    {% endif %}    
+                    {% if user.is_authenticated and user.profile.role == "employer" %}
+                        <li{% if section == "create vacancies" %}class="selected"{% endif %}>
+                             <a href="#">Создать вакансию</a>
+                        </li>
+                    {% endif %}
+                    {% if user.is_authenticated and user.profile.role != "employer" %}
+                        <li {% if section == "people" %}class="selected"{% endif %}>
+                            <a href="{% url "my-channels" %}">Каналы</a>
+                        </li>
+                    {% endif %}
+                    {% if user.is_authenticated and user.profile.role != "employer" %}
+                        <li {% if section == "people" %}class="selected"{% endif %}>
+                            <a href="{% url "create-channel" %}">Создать канал</a>
+                        </li>
+                    {% endif %}
+                </ul>
+        {% endif %}
+        <span class="user">
+            {% if request.user.is_authenticated %}
+                Hello {{ request.user.first_name|default:request.user.username }},
+                <form action="/account/logout/" method="post">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url "login" %}">Войти</a>
+            {% endif %}
+        </span> 
+    </div>
+    <div id="content">
+        {% block content %}
+            <h1>Welcome, {{ user.username }}</h1>
+
+            <h2>Search Users</h2>
+            <form method="get" action="{% url 'search_users' %}">
+                <input type="text" name="query" placeholder="Search users by username" required>
+                <button type="submit">Search</button>
+            </form>
+        
+            {% if users %}
+                <h3>Search Results:</h3>
+                <ul>
+                    {% for user in users %}
+                        <li>{{ user.username }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No users found.</p>
+            {% endif %}
+        {% endblock %}
+    </div>
+</body>
+</html>

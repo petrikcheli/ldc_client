@@ -15,6 +15,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         websocket_client/websocket_client.h websocket_client/websocket_client.cpp
         client/p2p_connection.h client/p2p_connection.cpp
+        client/client.h client/client.cpp
         screen_share/screen_streamer.h screen_share/screen_streamer.cpp
         call_dialog/call_dialog.h call_dialog/call_dialog.cpp call_dialog/call_dialog.ui
         audio/audio.h audio/audio.cpp

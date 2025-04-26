@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Заявки в друзья</h2>
+    <ul>
+        {% for request in received_requests %}
+            <li>
+                {{ request.from_user.username }}
+                <a href="{% url 'respond_to_friend_request' request.id 'accept' %}">Accept</a>
+                <a href="{% url 'respond_to_friend_request' request.id 'reject' %}">Reject</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

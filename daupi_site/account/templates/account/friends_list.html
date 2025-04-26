@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Your Friends</h2>
+
+    {% if friend_list %}
+        <ul>
+            {% for friend in friend_list %}
+                <li>{{ friend.username }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You have no friends yet.</p>
+    {% endif %}
+{% endblock %}

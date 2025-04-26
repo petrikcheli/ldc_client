@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Пригласить друга в "{{ channel.name }}"</h2>
+  <form method="post">
+    {% csrf_token %}
+    <label for="username">Имя пользователя:</label>
+    <input type="text" name="username" required>
+    <button type="submit">Пригласить</button>
+  </form>
+
+  {% if success %}
+    <p style="color: green;">Пользователь добавлен в канал!</p>
+  {% elif error %}
+    <p style="color: red;">{{ error }}</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{ channel.name }}</h2>
+<p>{{ channel.description }}</p>
+
+<a href="{% url 'create_subchannel' channel.id %}">➕ Создать подканал</a>
+
+<h3>Подканалы:</h3>
+<ul>
+    {% for subchannel in subchannels %}
+        <li>{{ subchannel.name }} ({{ subchannel.get_type_display }})</li>
+    {% empty %}
+        <li>Нет подканалов.</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'my-channels' %}">← Назад к моим каналам</a>
+{% endblock %}
+
